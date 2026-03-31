@@ -1,0 +1,39 @@
+{
+  "name": "@theSportsDev/utils",
+  "version": "0.1.0",
+  "description": "theSportsDev internal common utility library",
+  "main": "./src/index.cjs",
+  "exports": {
+    ".": {
+      "import": "./src/index.mjs",
+      "require": "./src/index.cjs"
+    }
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "testMatch": ["**/test/**/*.spec.js"]
+  },
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theSportsDev/utils.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "dependencies": {
+    "jest": "^30.3.0",
+    "morgan": "^1.10.0",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  }
+}
