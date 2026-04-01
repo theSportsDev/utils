@@ -33,10 +33,11 @@ function createDatadogTransport(config) {
   //   intakeRegion:  config.datadog.intakeRegion || 'us1',
   // });
 
-  throw new Error(
+  console.error(
     '[Logger] Datadog transport is not yet activated.\n' +
     'See src/implementations/winston/transports/datadog.js for setup instructions.'
   );
+  return null;
 }
 
 module.exports = { createDatadogTransport };

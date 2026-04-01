@@ -10,22 +10,13 @@ const { createFileTransports } = require('./transports/file');
 const { createDatadogTransport } = require('./transports/datadog');
 
 class WinstonLogger extends BaseLogger {
-  constructor() {
+  constructor(userConfig = {}) {
     super();
-    this._config   = null;
-    this._instance = null;
+    this._config = resolveConfig(userConfig);
+    this._instance = this._build();
   }
 
-  init(userConfig = {}) {
-    if (this._instance) {
-      process.emitWarning(
-        '[Logger] init() was already called. Subsequent calls are ignored.',
-        'LoggerWarning'
-      );
-      return this;
-    }
-
-    this._config = resolveConfig(userConfig);
+  _build() {
     const { format: formatType, level, enableFile, datadog: datadogConfig } = this._config;
 
     const jsonFormat   = createJsonFormat(this._config);
@@ -35,27 +26,18 @@ class WinstonLogger extends BaseLogger {
     const transportsList = [createConsoleTransport(consoleFormat)];
 
     if (enableFile) {
-      // 파일은 콘솔 포맷과 무관하게 항상 JSON 사용 — 로그 수집에 적합
       transportsList.push(...createFileTransports(this._config, jsonFormat));
     }
 
     if (datadogConfig) {
-      transportsList.push(createDatadogTransport(this._config));
+      const datadogTransport = createDatadogTransport(this._config);
+      if (datadogTransport) transportsList.push(datadogTransport);
     }
 
-    this._instance = winston.createLogger({
+    return winston.createLogger({
       level,
       transports: transportsList,
     });
-
-    return this;
-  }
-
-  _getInstance() {
-    if (!this._instance) {
-      this.init(); // auto-initialize with defaults on first use
-    }
-    return this._instance;
   }
 
   /**
@@ -79,17 +61,16 @@ class WinstonLogger extends BaseLogger {
     return [String(message), meta];
   }
 
-  info(message, meta)    { const [m, mm] = this._normalize(message, meta); this._getInstance().info(m, mm); }
-  warn(message, meta)    { const [m, mm] = this._normalize(message, meta); this._getInstance().warn(m, mm); }
-  error(message, meta)   { const [m, mm] = this._normalize(message, meta); this._getInstance().error(m, mm); }
-  debug(message, meta)   { const [m, mm] = this._normalize(message, meta); this._getInstance().debug(m, mm); }
-  verbose(message, meta) { const [m, mm] = this._normalize(message, meta); this._getInstance().verbose(m, mm); }
-  http(message, meta)    { const [m, mm] = this._normalize(message, meta); this._getInstance().http(m, mm); }
+  info(message, meta)    { const [m, mm] = this._normalize(message, meta); this._instance.info(m, mm); }
+  warn(message, meta)    { const [m, mm] = this._normalize(message, meta); this._instance.warn(m, mm); }
+  error(message, meta)   { const [m, mm] = this._normalize(message, meta); this._instance.error(m, mm); }
+  debug(message, meta)   { const [m, mm] = this._normalize(message, meta); this._instance.debug(m, mm); }
+  verbose(message, meta) { const [m, mm] = this._normalize(message, meta); this._instance.verbose(m, mm); }
+  http(message, meta)    { const [m, mm] = this._normalize(message, meta); this._instance.http(m, mm); }
 
   /**
    * 추가 바인딩 컨텍스트를 가진 자식 로거를 생성합니다.
    * 자식 로거는 동일한 Winston 인스턴스와 트랜스포트를 사용합니다.
-   * 자식 로거에서 child()를 호출하면 컨텍스트가 병합됩니다.
    *
    * @example
    * const log = logger.child({ module: 'auth' });
@@ -97,8 +78,7 @@ class WinstonLogger extends BaseLogger {
    * // → { message: '로그인 성공', module: 'auth', userId: 1, ... }
    */
   child(context) {
-    const winstonChild = this._getInstance().child(context);
-    return this._wrapChild(winstonChild);
+    return this._wrapChild(this._instance.child(context));
   }
 
   _wrapChild(winstonChild) {

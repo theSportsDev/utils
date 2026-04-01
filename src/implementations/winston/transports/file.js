@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
 
@@ -15,6 +16,7 @@ const path = require('path');
  */
 function createFileTransports(config, format) {
   const logDir = path.resolve(config.logDir, config.env);
+  fs.mkdirSync(logDir, { recursive: true });
 
   const shared = {
     dirname: logDir,
@@ -25,17 +27,17 @@ function createFileTransports(config, format) {
     format,
   };
 
-  return [
-    new DailyRotateFile({
-      ...shared,
-      filename: '%DATE%-combined.log',
-    }),
-    new DailyRotateFile({
-      ...shared,
-      filename: '%DATE%-error.log',
-      level: 'error',
-    }),
+  const transports = [
+    new DailyRotateFile({ ...shared, filename: '%DATE%-combined.log' }),
+    new DailyRotateFile({ ...shared, filename: '%DATE%-error.log', level: 'error' }),
   ];
+
+  // 파일 스트림 에러가 미처리 예외로 프로세스를 종료시키지 않도록 핸들링
+  transports.forEach(t => t.on('error', (err) => {
+    console.error('[Logger] File transport error:', err.message);
+  }));
+
+  return transports;
 }
 
 module.exports = { createFileTransports };
