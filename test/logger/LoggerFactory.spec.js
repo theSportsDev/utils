@@ -20,7 +20,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { LoggerFactory } = require('../index.cjs');
+const { LoggerFactory } = require('../../index.cjs');
 
 /** 파일이 생성될 때까지 최대 timeout ms 대기 */
 function waitForFile(filePath, timeout = 2000) {
