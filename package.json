@@ -1,6 +1,6 @@
 {
   "name": "@theSportsDev/utils",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "author": "PlatformN",
   "description": "theSportsDev internal common utility library",
   "main": "./src/index.cjs",
