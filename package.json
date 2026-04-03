@@ -1,6 +1,6 @@
 {
   "name": "@theSportsDev/utils",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": "PlatformN",
   "description": "theSportsDev internal common utility library",
   "main": "./src/index.cjs",
@@ -31,8 +31,10 @@
     "registry": "https://npm.pkg.github.com",
     "access": "restricted"
   },
+  "devDependencies": {
+    "jest": "^30.3.0"
+  },
   "dependencies": {
-    "jest": "^30.3.0",
     "morgan": "^1.10.0",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^5.0.0"
