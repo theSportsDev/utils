@@ -2,7 +2,7 @@
 
 Platformn 사내 공통 유틸리티 라이브러리.
 
-기여 방법은 [CONTRIBUTION.md](./CONTRIBUTION.md)를 참고해 주세요.
+기여 방법은 [CONTRIBUTING.md](./CONTRIBUTING.md)를 참고해 주세요.
 
 ## 설치
 
@@ -43,26 +43,19 @@ main 브랜치에 머지되면 GitHub Actions가 자동으로 GitHub Packages에
 
 ### 배포 절차
 
-**1) `package.json`의 버전을 올린다**
-
-```bash
-npm version patch   # 0.1.0 → 0.1.1  (버그 수정)
-npm version minor   # 0.1.0 → 0.2.0  (기능 추가)
-npm version major   # 0.1.0 → 1.0.0  (Breaking change)
-```
-
-**2) PR을 열고 main에 머지한다**
+**1) PR을 열고 main에 머지한다**
 
 머지 시 GitHub Actions가 자동으로 실행됩니다.
 
 ```
 PR 머지 → main push → GitHub Actions
-  → 현재 버전이 이미 배포됐는지 확인
-  → 새 버전이면 npm publish
-  → 동일 버전이면 skip (에러 없이 통과)
+  → package.json version 변경 여부 확인
+  → 변경 없으면 자동으로 patch bump 후 push ([skip ci] 태그)
+  → npm publish (GitHub Packages)
+  → Slack 채널(#npm-publish-notify)에 알림
 ```
 
-> 버전을 올리지 않고 머지해도 배포 step이 skip될 뿐 CI는 정상 통과합니다.
+> patch 이외의 버전 변경(minor, major)이 필요하면 작업 브랜치에서 미리 `npm version minor` 또는 `npm version major`를 실행해 주세요.
 
 ### 로컬에서 수동 배포 (긴급 시)
 
