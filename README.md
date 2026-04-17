@@ -2,6 +2,8 @@
 
 Platformn 사내 공통 유틸리티 라이브러리.
 
+기여 방법은 [CONTRIBUTION.md](./CONTRIBUTION.md)를 참고해 주세요.
+
 ## 설치
 
 패키지를 설치하기 전에 아래 레지스트리 설정이 필요합니다.
