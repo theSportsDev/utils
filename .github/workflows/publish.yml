@@ -1,52 +1,81 @@
 name: Publish to GitHub Packages
 
+# main 브랜치에 새 커밋이 생길 때마다 실행
 on:
   push:
     branches:
       - main
-    paths-ignore:
-      - src/**/*.spec.js
-      - .github/**/*
-      - .env
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # 봇이 자동 bump 후 올린 커밋에서는 재실행하지 않음 (무한 루프 방지)
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     permissions:
-      contents: read
-      packages: write
+      contents: write # version bump 커밋을 push 하기 위한 권한
+      packages: write # GitHub Packages에 publish 하기 위한 권한
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # push 범위 전체 diff 비교를 위해 충분한 히스토리 체크아웃
+      - uses: actions/checkout@v4
         with:
-          node-version: '20'
+          ref: main
+          fetch-depth: 50
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Node.js 설정 및 GitHub Packages 레지스트리(@theSportsDev scope) 등록
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@theSportsDev'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check if version already published
-        id: version-check
+      # 이번 push에 포함된 커밋 전체에서 package.json version 필드 변경 여부 확인
+      # HEAD~1 대신 push 이벤트의 before/after SHA로 정확한 범위 비교
+      - name: Check version change
+        id: check
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          if npm view @theSportsDev/utils@$VERSION --registry https://npm.pkg.github.com > /dev/null 2>&1; then
-            echo "skip=true" >> $GITHUB_OUTPUT
-            echo "⚠️ Version $VERSION is already published. Skipping publish."
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-            echo "✅ Version $VERSION is new. Proceeding with publish."
-          fi
+          CHANGED=$(git diff ${{ github.event.before }} ${{ github.event.after }} -- package.json | (grep -c -E '^\+\s+"version"' || true))
+          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+
+      # version이 그대로면 patch를 자동으로 올린 뒤 [skip ci] 태그와 함께 push
+      # 다음 workflow 실행 시 위의 if 조건에 걸려 스킵됨
+      - name: Auto bump patch version
+        if: steps.check.outputs.changed == '0'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          npm version patch --no-git-tag-version
+          NEW_VERSION=$(jq -r .version package.json)
+          git commit -am "[Bot]: bump patch version to $NEW_VERSION [skip ci]"
+          git pull --rebase
+          git push
+
+      # 의존성 설치 후 GitHub Packages에 publish
+      - name: Install and publish
+        run: |
+          npm ci
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish
-        if: steps.version-check.outputs.skip == 'false'
-        run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Slack Channel (#npm-publish-notify)에 버저닝 notify
+      - name: Notify to Slack channel
+        if: success()
+        run: |
+          VERSION=$(jq -r .version package.json)
+          PACKAGE=$(jq -r .name package.json)
+
+          # 이번 push에 포함된 커밋 목록 (merge commit 제외)
+          COMMITS=$(git log ${{ github.event.before }}..${{ github.event.after }} --no-merges --pretty=format:"• %an: %s")
+
+          SLACK_MSG="${PACKAGE}@${VERSION} published new version!"
+          if [ -n "$COMMITS" ]; then
+            SLACK_MSG="${SLACK_MSG}\n${COMMITS}"
+          fi
+
+          # publish 성공 후 notify 실패로 job 전체가 failure로 표시되는 것을 방지
+          curl -X POST \
+            -H 'Content-type: application/json' \
+            --data "$(jq -n --arg text "$SLACK_MSG" '{text: $text}')" \
+            "${{ secrets.SLACK_WEBHOOK_URL }}" || true
