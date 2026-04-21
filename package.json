@@ -1,6 +1,6 @@
 {
   "name": "@theSportsDev/utils",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "author": "PlatformN",
   "description": "theSportsDev internal common utility library",
   "main": "./src/index.cjs",
@@ -20,7 +20,9 @@
     "test": "jest"
   },
   "jest": {
-    "testMatch": ["**/test/**/*.spec.js"]
+    "testMatch": [
+      "**/test/**/*.spec.js"
+    ]
   },
   "license": "UNLICENSED",
   "repository": {
