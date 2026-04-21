@@ -17,9 +17,9 @@ function createPrettyFormat(config) {
     format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     format.colorize({ all: true }),
     format.errors({ stack: true }),
-    format.printf(({ timestamp, level, message, env, stack, splat, ...meta }) => {
+    format.printf(({ timestamp, level, message, env, stack, ...meta }) => {
       const envTag = `[${env || config.env}]`;
-      const msg = message != null ? String(message) : '';
+      const msg = message !== null ? String(message) : '';
       const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
 
       if (stack) {

@@ -1,8 +1,9 @@
 'use strict';
 
 const fs = require('fs');
-const DailyRotateFile = require('winston-daily-rotate-file');
 const path = require('path');
+
+const DailyRotateFile = require('winston-daily-rotate-file');
 
 /**
  * 일별 로테이션 파일 트랜스포트를 생성합니다.
