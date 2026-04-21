@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 50
+          fetch-depth: 100
           token: ${{ secrets.GH_TOKEN }}
 
       # Node.js 설정 및 GitHub Packages 레지스트리(@theSportsDev scope) 등록
@@ -45,10 +45,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
           npm version patch --no-git-tag-version
           NEW_VERSION=$(jq -r .version package.json)
           git commit -am "[Bot]: bump patch version to $NEW_VERSION [skip ci]"
-          git pull --rebase
           git push
 
       # 의존성 설치 후 GitHub Packages에 publish
@@ -72,7 +72,7 @@ jobs:
           # 이번 push에 포함된 커밋 목록 (merge commit 제외)
           COMMITS=$(git log ${{ github.event.before }}..${{ github.event.after }} --no-merges --pretty=format:"• %an: %s")
 
-          SLACK_MSG=":rocket: <https://github.com/theSportsDev/utils/pkgs/npm/${PACKAGE}|${PACKAGE}@${VERSION}> published new version!"
+          SLACK_MSG="<https://github.com/theSportsDev/utils/pkgs/npm/${PACKAGE}|${PACKAGE}@${VERSION}> released! :rocket:"
           if [ -n "$COMMITS" ]; then
             SLACK_MSG="${SLACK_MSG}
 ${COMMITS}"
@@ -81,5 +81,6 @@ ${COMMITS}"
           # publish 성공 후 notify 실패로 job 전체가 failure로 표시되는 것을 방지
           curl -X POST \
             -H 'Content-type: application/json' \
-            --data "$(jq -n --arg text "$SLACK_MSG" '{text: $text}')" \
+            --data "$(jq -n --arg text "$SLACK_MSG" \
+              '{"channel":"#dev_alarm","text":$text,"username":"배포 알림 봇","icon_emoji":":npm:"}')" \
             "${{ secrets.SLACK_WEBHOOK_URL }}" || true
