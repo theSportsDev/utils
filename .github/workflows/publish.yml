@@ -72,9 +72,10 @@ jobs:
           # 이번 push에 포함된 커밋 목록 (merge commit 제외)
           COMMITS=$(git log ${{ github.event.before }}..${{ github.event.after }} --no-merges --pretty=format:"• %an: %s")
 
-          SLACK_MSG="${PACKAGE}@${VERSION} published new version!"
+          SLACK_MSG=":rocket: <https://github.com/theSportsDev/utils/pkgs/npm/${PACKAGE}|${PACKAGE}@${VERSION}> published new version!"
           if [ -n "$COMMITS" ]; then
-            SLACK_MSG="${SLACK_MSG}\n${COMMITS}"
+            SLACK_MSG="${SLACK_MSG}
+${COMMITS}"
           fi
 
           # publish 성공 후 notify 실패로 job 전체가 failure로 표시되는 것을 방지
