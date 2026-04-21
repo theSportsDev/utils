@@ -22,12 +22,35 @@ const path = require('path');
 
 const { LoggerFactory } = require('../../src/index.cjs');
 
-/** 파일이 생성될 때까지 최대 timeout ms 대기 */
-function waitForFile(filePath, timeout = 2000) {
+// 로컬 타임존 기준 YYYY-MM-DD (winston-daily-rotate-file의 기본 동작과 일치)
+function localYyyyMmDd(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// 가장 마지막의 로그(JSON)만 추출하는 함수
+// JSON 이 한 줄 씩 추가되는 로그를 테스트하는 과정에서 마지막 개행때문에 테스트가 실패할 것을 방지
+function readLastNonEmptyLine(filePath) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  return lines.length ? lines[lines.length - 1] : '';
+}
+
+// 파일이 생성되고 최소 1바이트 이상 기록될 때까지 최대 timeout ms 대기 
+function waitForFile(filePath, timeout = 2000, minSize = 1) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
     (function check() {
-      if (fs.existsSync(filePath)) return resolve();
+      if (fs.existsSync(filePath)) {
+        try {
+          const st = fs.statSync(filePath);
+          if (st.size >= minSize) return resolve();
+        } catch {
+          // stat race: keep polling
+        }
+      }
       if (Date.now() - start > timeout) return reject(new Error(`File not created within ${timeout}ms: ${filePath}`));
       setTimeout(check, 20);
     })();
@@ -225,7 +248,7 @@ describe('Logger 사용 가이드', () => {
     test('enableFile: true 이면 combined 로그 파일이 생성된다', async () => {
       logger.info('파일 저장 확인', { requestId: 'test-001' });
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = localYyyyMmDd();
       const combinedLog = path.join(tmpDir, 'test', `${today}-combined.log`);
       await waitForFile(combinedLog);
       expect(fs.existsSync(combinedLog)).toBe(true);
@@ -234,10 +257,10 @@ describe('Logger 사용 가이드', () => {
     test('파일 내용은 JSON 포맷이며 message·level·timestamp 필드를 포함한다', async () => {
       logger.info('JSON 포맷 검증', { userId: 99 });
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = localYyyyMmDd();
       const combinedLog = path.join(tmpDir, 'test', `${today}-combined.log`);
       await waitForFile(combinedLog);
-      const parsed = JSON.parse(fs.readFileSync(combinedLog, 'utf-8').trim());
+      const parsed = JSON.parse(readLastNonEmptyLine(combinedLog));
 
       expect(parsed.message).toBe('JSON 포맷 검증');
       expect(parsed.userId).toBe(99);
@@ -248,29 +271,34 @@ describe('Logger 사용 가이드', () => {
     test('error 레벨 로그는 combined 파일과 error 전용 파일 양쪽에 기록된다', async () => {
       logger.error('심각한 오류 발생', { code: 500 });
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = localYyyyMmDd();
       const logDir = path.join(tmpDir, 'test');
       const errorLog = path.join(logDir, `${today}-error.log`);
       const combinedLog = path.join(logDir, `${today}-combined.log`);
 
       await Promise.all([waitForFile(errorLog), waitForFile(combinedLog)]);
 
-      const parsed = JSON.parse(fs.readFileSync(errorLog, 'utf-8').trim());
-      expect(parsed.level).toBe('error');
-      expect(parsed.message).toBe('심각한 오류 발생');
+      const parsedError = JSON.parse(readLastNonEmptyLine(errorLog));
+      expect(parsedError.level).toBe('error');
+      expect(parsedError.message).toBe('심각한 오류 발생');
+
+      const parsedCombined = JSON.parse(readLastNonEmptyLine(combinedLog));
+      expect(parsedCombined.level).toBe('error');
+      expect(parsedCombined.message).toBe('심각한 오류 발생');
     });
 
     test('info 레벨 로그는 error 전용 파일에 기록되지 않는다', async () => {
       logger.info('일반 정보 로그');
 
-      const today = new Date().toISOString().slice(0, 10);
+      const today = localYyyyMmDd();
       const combinedLog = path.join(tmpDir, 'test', `${today}-combined.log`);
       await waitForFile(combinedLog); // combined에 기록됨을 확인한 뒤
 
       // 파일이 생성되더라도 error 레벨 항목은 없어야 한다
       const errorLog = path.join(tmpDir, 'test', `${today}-error.log`);
-      const errorContent = fs.existsSync(errorLog) ? fs.readFileSync(errorLog, 'utf-8').trim() : '';
-      expect(errorContent).toBe('');
+      if (!fs.existsSync(errorLog)) return;
+      const last = readLastNonEmptyLine(errorLog);
+      expect(last).toBe('');
     });
 
     test('enableFile: false 이면 로그 디렉토리 자체가 생성되지 않는다', () => {
