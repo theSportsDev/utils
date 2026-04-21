@@ -17,7 +17,10 @@
     "src"
   ],
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint . --ext .js",
+    "lint:fix": "eslint . --ext .js --fix",
+    "format": "prettier --write ."
   },
   "jest": {
     "testMatch": [
@@ -34,6 +37,8 @@
     "access": "restricted"
   },
   "devDependencies": {
+    "@theSportsDev/eslint-config": "^0.3.0",
+    "eslint": "^8.57.1",
     "jest": "^30.3.0"
   },
   "dependencies": {

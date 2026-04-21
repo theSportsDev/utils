@@ -29,6 +29,11 @@ jobs:
           cache: npm
           cache-dependency-path: './package-lock.json'
 
+      - name: Setup npm registry authentication
+        run: |
+          npm config set @theSportsDev:registry https://npm.pkg.github.com
+          npm config set //npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}
+
       - name: Install dependencies
         run: npm ci
 
