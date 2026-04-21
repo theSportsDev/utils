@@ -43,22 +43,15 @@ function waitForFile(filePath, timeout = 2000, minSize = 1) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
     (function check() {
-      if (fs.existsSync(filePath)) {
-        try {
-          const st = fs.statSync(filePath);
-          if (st.size >= minSize) return resolve();
-        } catch {
-          // stat race: keep polling
-        }
-      }
-      if (Date.now() - start > timeout) return reject(new Error(`File not created within ${timeout}ms: ${filePath}`));
+      if (fs.existsSync(filePath)) return resolve();
+      if (Date.now() - start > timeout)
+        return reject(new Error(`File not created within ${timeout}ms: ${filePath}`));
       setTimeout(check, 20);
     })();
   });
 }
 
 describe('Logger 사용 가이드', () => {
-
   // ── 1. 생성 ─────────────────────────────────────────────────────────────────
 
   describe('생성 (LoggerFactory.create)', () => {
@@ -78,7 +71,7 @@ describe('Logger 사용 가이드', () => {
     });
 
     test('logDir 없이 enableFile: true(기본값)로 생성하면 파일 저장이 비활성화되고 콘솔 경고가 출력된다', () => {
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       const logger = LoggerFactory.create(); // enableFile 기본값 true, logDir 없음
       expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('logDir is required'));
@@ -97,8 +90,8 @@ describe('Logger 사용 가이드', () => {
     beforeEach(() => {
       logger = LoggerFactory.create({ enableFile: false });
       spy = {};
-      ['info', 'warn', 'error', 'debug', 'verbose', 'http'].forEach(level => {
-        spy[level] = jest.spyOn(logger._instance, level).mockImplementation(() => { });
+      ['info', 'warn', 'error', 'debug', 'verbose', 'http'].forEach((level) => {
+        spy[level] = jest.spyOn(logger._instance, level).mockImplementation(() => {});
       });
     });
 
@@ -141,7 +134,7 @@ describe('Logger 사용 가이드', () => {
 
     beforeEach(() => {
       logger = LoggerFactory.create({ enableFile: false });
-      infoSpy = jest.spyOn(logger._instance, 'info').mockImplementation(() => { });
+      infoSpy = jest.spyOn(logger._instance, 'info').mockImplementation(() => {});
     });
 
     test('문자열 메시지만 전달', () => {
@@ -159,7 +152,7 @@ describe('Logger 사용 가이드', () => {
       logger.info(err);
       expect(infoSpy).toHaveBeenCalledWith(
         'DB 타임아웃',
-        expect.objectContaining({ stack: expect.stringContaining('DB 타임아웃') }),
+        expect.objectContaining({ stack: expect.stringContaining('DB 타임아웃') })
       );
     });
 
@@ -168,16 +161,13 @@ describe('Logger 사용 가이드', () => {
       logger.info(err, { path: '/var/log/app.log' });
       expect(infoSpy).toHaveBeenCalledWith(
         '파일 없음',
-        expect.objectContaining({ stack: expect.any(String), path: '/var/log/app.log' }),
+        expect.objectContaining({ stack: expect.any(String), path: '/var/log/app.log' })
       );
     });
 
     test('message 필드를 가진 객체 전달 — message가 분리되고 나머지는 메타로 처리된다', () => {
       logger.info({ message: '구조화 로그', requestId: 'req-001', duration: 120 });
-      expect(infoSpy).toHaveBeenCalledWith(
-        '구조화 로그',
-        { requestId: 'req-001', duration: 120 },
-      );
+      expect(infoSpy).toHaveBeenCalledWith('구조화 로그', { requestId: 'req-001', duration: 120 });
     });
 
     test('message 필드 없는 순수 구조화 객체 전달 — 빈 문자열 메시지 + 전체 메타', () => {
@@ -236,12 +226,17 @@ describe('Logger 사용 가이드', () => {
 
     beforeEach(() => {
       tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'logger-test-'));
-      logger = LoggerFactory.create({ enableFile: true, logDir: tmpDir, env: 'test', format: 'json' });
+      logger = LoggerFactory.create({
+        enableFile: true,
+        logDir: tmpDir,
+        env: 'test',
+        format: 'json',
+      });
     });
 
     afterEach(async () => {
       // 파일 스트림이 디렉토리 삭제 전에 완전히 닫히도록 종료 대기
-      await new Promise(resolve => logger._instance.end(resolve));
+      await new Promise((resolve) => logger._instance.end(resolve));
       fs.rmSync(tmpDir, { recursive: true, force: true });
     });
 
@@ -304,7 +299,11 @@ describe('Logger 사용 가이드', () => {
     test('enableFile: false 이면 로그 디렉토리 자체가 생성되지 않는다', () => {
       const isolatedDir = fs.mkdtempSync(path.join(os.tmpdir(), 'logger-nofile-'));
       try {
-        const consoleOnlyLogger = LoggerFactory.create({ enableFile: false, logDir: isolatedDir, env: 'test' });
+        const consoleOnlyLogger = LoggerFactory.create({
+          enableFile: false,
+          logDir: isolatedDir,
+          env: 'test',
+        });
         consoleOnlyLogger.info('파일 없음 확인');
         expect(fs.existsSync(path.join(isolatedDir, 'test'))).toBe(false);
       } finally {
