@@ -1,6 +1,6 @@
 name: Publish to GitHub Packages
 
-# main 브랜치에 새 커밋이 생길 때마다 실행
+# main 브랜치에 push될 때마다 실행
 on:
   push:
     branches:
@@ -16,55 +16,75 @@ jobs:
       packages: write # GitHub Packages에 publish 하기 위한 권한
 
     steps:
-      # push 범위 전체 diff 비교를 위해 충분한 히스토리 체크아웃
-      - uses: actions/checkout@v4
+      # 이전 커밋과의 diff 확인 및 커밋 로그 조회를 위해 충분한 히스토리를 체크아웃
+      - name: Checkout diff
+        uses: actions/checkout@v4
         with:
-          ref: main
-          fetch-depth: 50
-          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 100
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # Node.js 설정 및 GitHub Packages 레지스트리(@theSportsDev scope) 등록
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20.x'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@theSportsDev'
 
-      # 이번 push에 포함된 커밋 전체에서 package.json version 필드 변경 여부 확인
-      # HEAD~1 대신 push 이벤트의 before/after SHA로 정확한 범위 비교
+      # 변경 감지 및 필요 시 patch 버전 자동 bump:
+      # - version이 변경된 경우: 개발자가 직접 관리 중이므로 publish 없이 스킵
+      # - 코드 변경(md/yml/yaml 제외)이 있고 version이 그대로인 경우: patch 버전 자동 bump 후 publish 대상으로 마킹
       - name: Check version change
-        id: check
+        id: changes
         run: |
-          CHANGED=$(git diff ${{ github.event.before }} ${{ github.event.after }} -- package.json | (grep -c -E '^\+\s+"version"' || true))
-          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+          PUBLISH=false
 
-      # version이 그대로면 patch를 자동으로 올린 뒤 [skip ci] 태그와 함께 push
-      # 다음 workflow 실행 시 위의 if 조건에 걸려 스킵됨
-      - name: Auto bump patch version
-        if: steps.check.outputs.changed == '0'
-        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 이번 push에서 version 필드가 변경되었는지 확인
+          VERSION_CHANGED=$(git diff ${{ github.event.before }} ${{ github.event.after }} -- package.json | (grep -c -E '^\+\s+"version"' || true))
+
+          if [ "$VERSION_CHANGED" -gt "0" ]; then
+            echo "version이 수동으로 변경됨, publish 스킵"
+            echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # 코드 변경 감지 (md/yml/yaml 파일 제외)
+          CODE_DIFF=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} -- . | grep -vE '\.(md|yml|yaml)$' || true)
+
+          if [ -z "$CODE_DIFF" ]; then
+            echo "코드 변경 없음, 스킵"
+            echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # patch 버전 자동 bump
+          OLD_VERSION=$(jq -r '.version' package.json)
           npm version patch --no-git-tag-version
-          NEW_VERSION=$(jq -r .version package.json)
+          NEW_VERSION=$(jq -r '.version' package.json)
+          echo "patch 버전 bump (${OLD_VERSION} → ${NEW_VERSION})"
+          PUBLISH=true
+
           git commit -am "[Bot]: bump patch version to $NEW_VERSION [skip ci]"
           git pull --rebase
           git push
 
+          echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
+
       # 의존성 설치 후 GitHub Packages에 publish
       - name: Install and publish
+        if: steps.changes.outputs.publish == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm config set @theSportsDev:registry https://npm.pkg.github.com
-          npm config set //npm.pkg.github.com/:_authToken=${{ secrets.GH_TOKEN }}
-
           npm ci
           npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      # Slack Channel (#npm-publish-notify)에 버저닝 notify
-      - name: Notify to Slack channel
-        if: success()
+      # Slack Channel (#deploy-alarm)에 버저닝 notify
+      - name: Slack 알림 발송
+        if: steps.changes.outputs.publish == 'true'
         run: |
           VERSION=$(jq -r .version package.json)
           PACKAGE=$(jq -r .name package.json)
@@ -72,14 +92,16 @@ jobs:
           # 이번 push에 포함된 커밋 목록 (merge commit 제외)
           COMMITS=$(git log ${{ github.event.before }}..${{ github.event.after }} --no-merges --pretty=format:"• %an: %s")
 
-          SLACK_MSG=":rocket: <https://github.com/theSportsDev/utils/pkgs/npm/${PACKAGE}|${PACKAGE}@${VERSION}> published new version!"
+          SLACK_MSG="<https://github.com/theSportsDev/utils/pkgs/npm/${PACKAGE}|${PACKAGE}@${VERSION}> released! :rocket:"
           if [ -n "$COMMITS" ]; then
-            SLACK_MSG="${SLACK_MSG}
-${COMMITS}"
+            SLACK_MSG="${SLACK_MSG}"$'\n'"${COMMITS}"
           fi
+
+          SLACK_CHANNEL="#deploy-alarm"
 
           # publish 성공 후 notify 실패로 job 전체가 failure로 표시되는 것을 방지
           curl -X POST \
             -H 'Content-type: application/json' \
-            --data "$(jq -n --arg text "$SLACK_MSG" '{text: $text}')" \
+            --data "$(jq -n --arg text "$SLACK_MSG" --arg channel "$SLACK_CHANNEL" \
+              '{"channel":$channel,"text":$text,"username":"배포 알림 봇","icon_emoji":":npm:"}')" \
             "${{ secrets.SLACK_WEBHOOK_URL }}" || true
