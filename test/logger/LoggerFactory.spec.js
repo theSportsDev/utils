@@ -34,11 +34,14 @@ function localYyyyMmDd(date = new Date()) {
 // JSON 이 한 줄 씩 추가되는 로그를 테스트하는 과정에서 마지막 개행때문에 테스트가 실패할 것을 방지
 function readLastNonEmptyLine(filePath) {
   const content = fs.readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  const lines = content
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
   return lines.length ? lines[lines.length - 1] : '';
 }
 
-// 파일이 생성되고 최소 1바이트 이상 기록될 때까지 최대 timeout ms 대기 
+// 파일이 생성되고 최소 1바이트 이상 기록될 때까지 최대 timeout ms 대기
 function waitForFile(filePath, timeout = 2000, minSize = 1) {
   return new Promise((resolve, reject) => {
     const start = Date.now();

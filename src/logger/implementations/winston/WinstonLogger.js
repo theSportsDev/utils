@@ -1,8 +1,10 @@
 'use strict';
 
 const winston = require('winston');
+
 const BaseLogger = require('../../core/BaseLogger');
 const { resolveConfig } = require('../../core/config');
+
 const { createJsonFormat } = require('./formats/json');
 const { createPrettyFormat } = require('./formats/pretty');
 const { createConsoleTransport } = require('./transports/console');
