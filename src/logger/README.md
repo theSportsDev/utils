@@ -47,13 +47,13 @@ import { logger, morganMiddleware } from '@theSportsDev/utils';
 
 ```js
 logger.init({
-  env: 'production',   // 기본값: process.env.NODE_ENV || 'development'
-  level: 'info',       // 기본값: development → 'debug', 그 외 → 'info'
-  format: 'json',      // 기본값: development → 'pretty', 그 외 → 'json'
-  logDir: './logs',    // 기본값: './logs'  (실제 경로: ./logs/{env}/)
-  maxFiles: '30d',     // 기본값: '30d'
-  maxSize: '20m',      // 기본값: '20m'
-  enableFile: true,    // 기본값: true
+  env: 'production', // 기본값: process.env.NODE_ENV || 'development'
+  level: 'info', // 기본값: development → 'debug', 그 외 → 'info'
+  format: 'json', // 기본값: development → 'pretty', 그 외 → 'json'
+  logDir: './logs', // 기본값: './logs'  (실제 경로: ./logs/{env}/)
+  maxFiles: '30d', // 기본값: '30d'
+  maxSize: '20m', // 기본값: '20m'
+  enableFile: true, // 기본값: true
 });
 ```
 
@@ -137,10 +137,10 @@ app.use(morganMiddleware({ format: ':method :url :status :response-time ms' }));
 
 ## 출력 포맷
 
-| format  | 출력 예시 |
-|---------|-----------|
-| `pretty` | `2024-01-01 12:00:00 [production] info: 서버 시작 {"port":3000}` |
-| `json`  | `{"timestamp":"...","level":"info","message":"서버 시작","port":3000,"env":"production"}` |
+| format   | 출력 예시                                                                                 |
+| -------- | ----------------------------------------------------------------------------------------- |
+| `pretty` | `2024-01-01 12:00:00 [production] info: 서버 시작 {"port":3000}`                          |
+| `json`   | `{"timestamp":"...","level":"info","message":"서버 시작","port":3000,"env":"production"}` |
 
 ---
 

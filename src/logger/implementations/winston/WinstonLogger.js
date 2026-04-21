@@ -19,7 +19,7 @@ class WinstonLogger extends BaseLogger {
   _build() {
     const { format: formatType, level, enableFile, datadog: datadogConfig } = this._config;
 
-    const jsonFormat   = createJsonFormat(this._config);
+    const jsonFormat = createJsonFormat(this._config);
     const prettyFormat = createPrettyFormat(this._config);
     const consoleFormat = formatType === 'json' ? jsonFormat : prettyFormat;
 
@@ -61,12 +61,30 @@ class WinstonLogger extends BaseLogger {
     return [String(message), meta];
   }
 
-  info(message, meta)    { const [m, mm] = this._normalize(message, meta); this._instance.info(m, mm); }
-  warn(message, meta)    { const [m, mm] = this._normalize(message, meta); this._instance.warn(m, mm); }
-  error(message, meta)   { const [m, mm] = this._normalize(message, meta); this._instance.error(m, mm); }
-  debug(message, meta)   { const [m, mm] = this._normalize(message, meta); this._instance.debug(m, mm); }
-  verbose(message, meta) { const [m, mm] = this._normalize(message, meta); this._instance.verbose(m, mm); }
-  http(message, meta)    { const [m, mm] = this._normalize(message, meta); this._instance.http(m, mm); }
+  info(message, meta) {
+    const [m, mm] = this._normalize(message, meta);
+    this._instance.info(m, mm);
+  }
+  warn(message, meta) {
+    const [m, mm] = this._normalize(message, meta);
+    this._instance.warn(m, mm);
+  }
+  error(message, meta) {
+    const [m, mm] = this._normalize(message, meta);
+    this._instance.error(m, mm);
+  }
+  debug(message, meta) {
+    const [m, mm] = this._normalize(message, meta);
+    this._instance.debug(m, mm);
+  }
+  verbose(message, meta) {
+    const [m, mm] = this._normalize(message, meta);
+    this._instance.verbose(m, mm);
+  }
+  http(message, meta) {
+    const [m, mm] = this._normalize(message, meta);
+    this._instance.http(m, mm);
+  }
 
   /**
    * 추가 바인딩 컨텍스트를 가진 자식 로거를 생성합니다.
@@ -86,13 +104,31 @@ class WinstonLogger extends BaseLogger {
     const wrapChild = this._wrapChild.bind(this);
 
     return {
-      info:    (msg, meta) => { const [m, mm] = normalize(msg, meta); winstonChild.info(m, mm); },
-      warn:    (msg, meta) => { const [m, mm] = normalize(msg, meta); winstonChild.warn(m, mm); },
-      error:   (msg, meta) => { const [m, mm] = normalize(msg, meta); winstonChild.error(m, mm); },
-      debug:   (msg, meta) => { const [m, mm] = normalize(msg, meta); winstonChild.debug(m, mm); },
-      verbose: (msg, meta) => { const [m, mm] = normalize(msg, meta); winstonChild.verbose(m, mm); },
-      http:    (msg, meta) => { const [m, mm] = normalize(msg, meta); winstonChild.http(m, mm); },
-      child:   (ctx) => wrapChild(winstonChild.child(ctx)),
+      info: (msg, meta) => {
+        const [m, mm] = normalize(msg, meta);
+        winstonChild.info(m, mm);
+      },
+      warn: (msg, meta) => {
+        const [m, mm] = normalize(msg, meta);
+        winstonChild.warn(m, mm);
+      },
+      error: (msg, meta) => {
+        const [m, mm] = normalize(msg, meta);
+        winstonChild.error(m, mm);
+      },
+      debug: (msg, meta) => {
+        const [m, mm] = normalize(msg, meta);
+        winstonChild.debug(m, mm);
+      },
+      verbose: (msg, meta) => {
+        const [m, mm] = normalize(msg, meta);
+        winstonChild.verbose(m, mm);
+      },
+      http: (msg, meta) => {
+        const [m, mm] = normalize(msg, meta);
+        winstonChild.http(m, mm);
+      },
+      child: (ctx) => wrapChild(winstonChild.child(ctx)),
     };
   }
 }

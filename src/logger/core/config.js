@@ -7,13 +7,13 @@
  */
 const DEFAULTS = {
   env: process.env.NODE_ENV || 'development',
-  level: null,      // 자동: development면 'debug', 그 외에는 'info'
-  format: null,     // 자동: development면 'pretty', 그 외에는 'json'
-  logDir: null,     // 필수 (enableFile: true일 때) — LoggerFactory.create({ logDir })로 주입
-  maxFiles: '30d',  // winston-daily-rotate-file: 최근 30일치 보관
-  maxSize: '20m',   // winston-daily-rotate-file: 20 MB에서 로테이션
+  level: null, // 자동: development면 'debug', 그 외에는 'info'
+  format: null, // 자동: development면 'pretty', 그 외에는 'json'
+  logDir: null, // 필수 (enableFile: true일 때) — LoggerFactory.create({ logDir })로 주입
+  maxFiles: '30d', // winston-daily-rotate-file: 최근 30일치 보관
+  maxSize: '20m', // winston-daily-rotate-file: 20 MB에서 로테이션
   enableFile: true, // 콘솔 외에 로테이션 파일에도 기록
-  datadog: null,    // { apiKey, service, hostname?, intakeRegion? } — Datadog 트랜스포트 활성화
+  datadog: null, // { apiKey, service, hostname?, intakeRegion? } — Datadog 트랜스포트 활성화
 };
 
 /**
@@ -26,14 +26,14 @@ function resolveConfig(userConfig = {}) {
   const config = { ...DEFAULTS, ...userConfig };
   const isDev = config.env === 'development';
 
-  if (config.level === null)  config.level  = isDev ? 'debug' : 'info';
+  if (config.level === null) config.level = isDev ? 'debug' : 'info';
   if (config.format === null) config.format = isDev ? 'pretty' : 'json';
 
   if (config.enableFile && !config.logDir) {
     console.error(
       '[Logger] logDir is required when enableFile is true (default).\n' +
-      "  Pass it via LoggerFactory.create({ logDir: '/path/to/logs' }).\n" +
-      '  File logging has been disabled for this instance.'
+        "  Pass it via LoggerFactory.create({ logDir: '/path/to/logs' }).\n" +
+        '  File logging has been disabled for this instance.'
     );
     config.enableFile = false;
   }

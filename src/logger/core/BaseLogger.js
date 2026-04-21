@@ -14,14 +14,28 @@ class BaseLogger {
    * @param {object} context - 이 자식 로거의 모든 로그 라인에 첨부할 필드
    * @returns {object} 동일한 API 인터페이스를 가진 자식 로거
    */
-  child(context) { console.error(new Error('child() must be implemented')); }
+  child(context) {
+    console.error(new Error('child() must be implemented'));
+  }
 
-  error(message, meta)   { console.error(new Error('error() must be implemented')); }
-  warn(message, meta)    { console.error(new Error('warn() must be implemented')); }
-  info(message, meta)    { console.error(new Error('info() must be implemented')); }
-  http(message, meta)    { console.error(new Error('http() must be implemented')); }
-  debug(message, meta)   { console.error(new Error('debug() must be implemented')); }
-  verbose(message, meta) { console.error(new Error('verbose() must be implemented')); }
+  error(message, meta) {
+    console.error(new Error('error() must be implemented'));
+  }
+  warn(message, meta) {
+    console.error(new Error('warn() must be implemented'));
+  }
+  info(message, meta) {
+    console.error(new Error('info() must be implemented'));
+  }
+  http(message, meta) {
+    console.error(new Error('http() must be implemented'));
+  }
+  debug(message, meta) {
+    console.error(new Error('debug() must be implemented'));
+  }
+  verbose(message, meta) {
+    console.error(new Error('verbose() must be implemented'));
+  }
 }
 
 module.exports = BaseLogger;

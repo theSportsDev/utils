@@ -33,9 +33,11 @@ function createFileTransports(config, format) {
   ];
 
   // 파일 스트림 에러가 미처리 예외로 프로세스를 종료시키지 않도록 핸들링
-  transports.forEach(t => t.on('error', (err) => {
-    console.error('[Logger] File transport error:', err.message);
-  }));
+  transports.forEach((t) =>
+    t.on('error', (err) => {
+      console.error('[Logger] File transport error:', err.message);
+    })
+  );
 
   return transports;
 }
