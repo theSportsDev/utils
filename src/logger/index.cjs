@@ -1,6 +1,6 @@
 'use strict';
 
-const LoggerFactory = require('./core/LoggerFactory');
-const { createMorganMiddleware } = require('./middleware/morgan');
+const { LoggerFactory, logger } = require('./logger');
+const { createMorganMiddleware } = require('./morgan');
 
-module.exports = { LoggerFactory, morganMiddleware: createMorganMiddleware };
+module.exports = { LoggerFactory, logger, morganMiddleware: createMorganMiddleware };
