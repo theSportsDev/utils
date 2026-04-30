@@ -73,10 +73,20 @@ describe('Logger 사용 가이드', () => {
       expect(() => logger.info('생성 직후 사용 테스트')).not.toThrow();
     });
 
-    test('logDir 없이 enableFile: true(기본값)로 생성하면 파일 저장이 비활성화되고 콘솔 경고가 출력된다', () => {
+    test('인자 없이 생성하면 콘솔 전용 로거가 만들어지며 경고는 출력되지 않는다', () => {
       const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-      const logger = LoggerFactory.create(); // enableFile 기본값 true, logDir 없음
+      const logger = LoggerFactory.create(); // logDir 없음 → enableFile 자동 false
+      expect(errorSpy).not.toHaveBeenCalled();
+      expect(() => logger.info('콘솔 전용 동작')).not.toThrow();
+
+      errorSpy.mockRestore();
+    });
+
+    test('enableFile: true를 명시했는데 logDir이 없으면 경고를 출력하고 파일 저장은 비활성화된다', () => {
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const logger = LoggerFactory.create({ enableFile: true });
       expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('logDir is required'));
       expect(() => logger.info('경고 후에도 동작해야 함')).not.toThrow();
 
