@@ -11,13 +11,13 @@ const { ErrorNotifier } = require('@theSportsDev/utils');
 // ESM
 import { ErrorNotifier } from '@theSportsDev/utils';
 
-const notifier = new ErrorNotifier({
-  channel: '#service_error',        
-  service: 'FC xx API 서버',
-  owner: '홍길동',
+module.exports = new ErrorNotifier({
+  slackChannel: process.env.SLACK_ALERT_CHANNEL,
+  targetService: 'FC xxx API 서버',
+  serviceOwner: '홍길동',
 });
 
-await notifier.post({ error });
+await notifier.push({ error });
 ```
 
 ## 생성자 옵션
@@ -66,5 +66,5 @@ module.exports = new ErrorNotifier({
 
 // 다른 모듈
 const notifier = require('./config/notifier');
-await notifier.post({ error });
+await notifier.push({ error });
 ```
