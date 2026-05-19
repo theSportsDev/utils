@@ -56,7 +56,7 @@ describe('ErrorNotifier', () => {
     });
 
     test('status가 없는 에러면 상태코드가 500으로 고정된다.', async () => {
-      const notifier = new ErrorNotifier({ targetService: 'Bluewings API', serviceOwner: '홍길동' });
+      const notifier = new ErrorNotifier({ targetService: 'Bluewings API', serviceOwner: '홍길동', slackChannel: 'C-TEST' });
       const postMessage = jest.fn().mockResolvedValue({ ts: '1700000000.000100' });
       notifier.slackClient = { chat: { postMessage } };
 
@@ -67,7 +67,7 @@ describe('ErrorNotifier', () => {
     });
 
     test('Error & status >= 500이면 부모 + 스레드 메시지를 발송한다', async () => {
-      const notifier = new ErrorNotifier({ targetService: 'Bluewings API', serviceOwner: '홍길동' });
+      const notifier = new ErrorNotifier({ targetService: 'Bluewings API', serviceOwner: '홍길동', slackChannel: 'C-TEST' });
       const postMessage = jest.fn().mockResolvedValue({ ts: '1700000000.000100' });
       notifier.slackClient = { chat: { postMessage } };
 
@@ -78,7 +78,7 @@ describe('ErrorNotifier', () => {
     });
 
     test('서비스 이름이 없으면 "Unknown Service"로 표기된다', async () => {
-      const notifier = new ErrorNotifier();
+      const notifier = new ErrorNotifier({ slackChannel: 'C-TEST' });
       const postMessage = jest.fn().mockResolvedValue({ ts: '1700000000.000100' });
       notifier.slackClient = { chat: { postMessage } };
 
@@ -88,13 +88,25 @@ describe('ErrorNotifier', () => {
     });
 
     test('message를 함께 전달하면 부모 메시지 앞에 추가된다', async () => {
-      const notifier = new ErrorNotifier();
+      const notifier = new ErrorNotifier({ slackChannel: 'C-TEST' });
       const postMessage = jest.fn().mockResolvedValue({ ts: '1700000000.000100' });
       notifier.slackClient = { chat: { postMessage } };
 
       await notifier.push({ error: makeMockError(500, 'DB down'), message: '추가 컨텍스트' });
 
       expect(postMessage.mock.calls[0][0].text).toContain('추가 컨텍스트\n');
+    });
+
+    test('slackChannel이 없으면 console.error만 남기고 발송 시도를 하지 않는다', async () => {
+      const notifier = new ErrorNotifier({ targetService: 'API', serviceOwner: '홍길동' });
+      const postMessage = jest.fn().mockResolvedValue({ ts: '1700000000.000100' });
+      notifier.slackClient = { chat: { postMessage } };
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      await expect(notifier.push({ error: makeMockError(500) })).resolves.toBeUndefined();
+
+      expect(postMessage).not.toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalledWith('Required slack channel to post message');
     });
 
     test('생성자에서 channel을 직접 지정할 수 있다 (환경변수 불필요)', async () => {

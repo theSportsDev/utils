@@ -15,7 +15,6 @@ const MEMBER_MAP = new Map([
 
 const config = {
   SLACK_BOT_TOKEN: 'xoxb-1250645255394-11012406659139-DboqhWy6CcpVxaYI9nJKsNRP',
-  SLACK_CHANNEL: '#service_error',
   worksHour: { days: [1, 2, 3, 4, 5], startHour: 8, endHour: 19 },
 };
 
@@ -24,7 +23,7 @@ class ErrorNotifier {
     this.targetService = targetService || 'Unknown Service';
     this.serviceOwner = serviceOwner || '';
     this.token = config.SLACK_BOT_TOKEN;
-    this.channel = slackChannel || config.SLACK_CHANNEL;
+    this.channel = slackChannel;
     this.slackClient = new WebClient(this.token);
   }
 
@@ -68,6 +67,10 @@ class ErrorNotifier {
 
   /** Slack 메시지를 게시하는 메서드 */
   _postSlackMessage({ channel, message, isMentionUser, thread_ts }) {
+    if (!channel) {
+      console.error('Required slack channel to post message');
+      return;
+    }
     // doc: https://docs.slack.dev/reference/methods/chat.postMessage/
     return this.slackClient.chat.postMessage({
       channel,
@@ -81,6 +84,11 @@ class ErrorNotifier {
   async push({ error, message } = {}) {
     // error가 아니거나 status가 500 이상이 아니면 알림 보내지 않기
     if (!(error instanceof Error) || error?.status < 500) return;
+
+    if (!this.channel) {
+      console.error('Required slack channel to post message');
+      return;
+    }
 
     const owner = this._mapOwnerToSlackId(this.serviceOwner);
 
