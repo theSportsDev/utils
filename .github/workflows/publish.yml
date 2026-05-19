@@ -97,11 +97,11 @@ jobs:
             SLACK_MSG="${SLACK_MSG}"$'\n'"${COMMITS}"
           fi
 
-          SLACK_CHANNEL="#deploy-alarm"
+          SLACK_CHANNEL="#test-channel-yj"
 
           # publish 성공 후 notify 실패로 job 전체가 failure로 표시되는 것을 방지
           curl -X POST \
             -H 'Content-type: application/json' \
             --data "$(jq -n --arg text "$SLACK_MSG" --arg channel "$SLACK_CHANNEL" \
-              '{"channel":$channel,"text":$text,"username":"배포 알림 봇","icon_emoji":":npm:"}')" \
+              '{"channel":$channel,"text":$text,"username":"npm 알림 봇","icon_emoji":":npm:"}')" \
             "${{ secrets.SLACK_WEBHOOK_URL }}" || true
