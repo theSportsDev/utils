@@ -17,10 +17,7 @@
     "src"
   ],
   "scripts": {
-    "test": "jest",
-    "lint": "eslint . --ext .js",
-    "lint:fix": "eslint . --ext .js --fix",
-    "format": "prettier --write ."
+    "test": "jest"
   },
   "jest": {
     "testMatch": [
@@ -43,7 +40,6 @@
     "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
-    "@theSportsDev/eslint-config": "^0.3.1",
     "eslint": "^8.57.1",
     "jest": "^30.3.0"
   }
