@@ -6,6 +6,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -46,7 +50,8 @@ jobs:
           VERSION_CHANGED=$(git diff ${{ github.event.before }} ${{ github.event.after }} -- package.json | (grep -c -E '^\+\s+"version"' || true))
 
           if [ "$VERSION_CHANGED" -gt "0" ]; then
-            echo "version이 수동으로 변경됨, publish 스킵"
+            echo "version이 수동으로 변경됨, 해당 버전을 publish"
+            PUBLISH=true
             echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -80,6 +85,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm ci
+          npm test -- --runInBand
           npm publish
 
       # Slack Channel (#deploy-alarm)에 버저닝 notify
