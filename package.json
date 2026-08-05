@@ -8,6 +8,10 @@
     ".": {
       "import": "./src/index.mjs",
       "require": "./src/index.cjs"
+    },
+    "./datetime": {
+      "import": "./src/datetime/index.mjs",
+      "require": "./src/datetime/index.cjs"
     }
   },
   "engines": {
@@ -35,6 +39,7 @@
   },
   "dependencies": {
     "@slack/web-api": "^7.15.1",
+    "dayjs": "^1.11.19",
     "morgan": "^1.10.0",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^5.0.0"
