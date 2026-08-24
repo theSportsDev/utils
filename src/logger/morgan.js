@@ -7,11 +7,13 @@ const morgan = require('morgan');
  *
  * @param {object} loggerInstance - http() 메서드를 가진 로거 인스턴스
  * @param {object} [options]
- * @param {string} [options.format='combined']
+ * @param {string} [options.format=':method :status :response-time ms']
  * @returns {Function} Express 미들웨어
  */
 function createMorganMiddleware(loggerInstance, options = {}) {
-  const { format = 'combined', ...morganOptions } = options;
+  // Deprecated: use requestLoggerMiddleware for structured, privacy-safe HTTP logs.
+  // The default deliberately excludes URL, referrer and user-agent fields.
+  const { format = ':method :status :response-time ms', ...morganOptions } = options;
   const stream = {
     write: (message) => loggerInstance.http(message.trimEnd()),
   };
