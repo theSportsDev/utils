@@ -1,6 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const { writeRequestEvent } = require('./logger');
 
 const REQUEST_ID = /^[A-Za-z0-9._-]{1,128}$/;
 
@@ -43,7 +44,7 @@ function requestLoggerMiddleware(loggerInstance, options = {}) {
         : 0;
       const route = req.route && typeof req.route.path === 'string' ? req.route.path : undefined;
       const aborted = outcome === 'aborted';
-      req.log.info(aborted ? 'HTTP request aborted' : 'HTTP request completed', {
+      writeRequestEvent(req.log, aborted ? 'HTTP request aborted' : 'HTTP request completed', {
         event: aborted ? 'http.request.aborted' : 'http.request.completed',
         duration_ms: Math.round(durationMs),
         http: {

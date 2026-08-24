@@ -93,14 +93,7 @@ function sanitizeString(value) {
     .replace(HYPHENATED_SECRET, REDACTED);
 }
 
-function createSanitizer(redaction = {}) {
-  const additionalKeys = new Set((redaction.additionalKeys || []).filter(Boolean).map(normalizeKey));
-  const additionalPaths = new Set((redaction.additionalPaths || []).filter((path) => typeof path === 'string' && path).map((path) => path.toLowerCase()));
-
-  function isSensitive(key, currentPath) {
-    return isSensitiveKey(key) || additionalKeys.has(normalizeKey(key)) || additionalPaths.has(currentPath.toLowerCase());
-  }
-
+function createSanitizer() {
   function sanitize(value) {
     const state = { nodes: 0, keys: 0, bytes: 0, seen: new WeakSet() };
     function visit(current, path, depth) {
@@ -132,7 +125,7 @@ function createSanitizer(redaction = {}) {
         }
         const nextPath = path ? `${path}.${key}` : key;
         const read = safeRead(current, key);
-        result[key] = isSensitive(key, nextPath) ? REDACTED : read.ok ? visit(read.value, nextPath, depth + 1) : REDACTED;
+        result[key] = isSensitiveKey(key) ? REDACTED : read.ok ? visit(read.value, nextPath, depth + 1) : REDACTED;
       }
       return result;
       } catch (_) {
