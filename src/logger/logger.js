@@ -31,7 +31,6 @@ class Logger {
       maxSize: userConfig.maxSize || '20m',
       service: userConfig.service || process.env.SERVICE_NAME || 'unknown-service',
       version: userConfig.version || process.env.APP_VERSION || 'unknown',
-      source: userConfig.source || 'nodejs',
       contextProvider: userConfig.contextProvider,
       attributePaths: Logger.validateAttributePaths(userConfig.attributePaths),
       redaction: userConfig.redaction || {},

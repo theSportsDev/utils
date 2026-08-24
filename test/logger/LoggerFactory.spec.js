@@ -390,7 +390,6 @@ describe('LoggerFactory.create API — 공용 구조화 로그', () => {
       format: 'json',
       service: 'membership-api',
       version: '2026.08.24',
-      source: 'nodejs',
     });
   });
 
@@ -406,7 +405,6 @@ describe('LoggerFactory.create API — 공용 구조화 로그', () => {
       env: 'test',
       service: 'membership-api',
       version: '2026.08.24',
-      source: 'nodejs',
       attributePaths: ['result_count'],
     });
     schemaLogger.info('회원 조회 완료', {
@@ -433,7 +431,6 @@ describe('LoggerFactory.create API — 공용 구조화 로그', () => {
       service: 'membership-api',
       env: 'test',
       version: '2026.08.24',
-      source: 'nodejs',
       event: 'member.read',
       module: 'membership',
       operation: 'read',

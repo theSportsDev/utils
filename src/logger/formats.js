@@ -126,7 +126,7 @@ function structuredFormat(config) {
     const event = {
       schemaVersion: '1.0', timestamp, level, message: message === undefined ? '' : String(message),
       status: level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'info',
-      service: config.service, env: config.env, version: config.version, source: config.source,
+      service: config.service, env: config.env, version: config.version, source: 'nodejs',
     };
     CANONICAL_FIELDS.forEach((key) => {
       const value = safeRead(info, key);
