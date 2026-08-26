@@ -1,6 +1,7 @@
 'use strict';
 
 const { WebClient } = require('@slack/web-api');
+const { sanitizeSlackMarkup } = require('./messageSafety');
 
 const MEMBER_MAP = new Map([
   ['배지훈', 'U02196V2EH3'],
@@ -14,17 +15,34 @@ const MEMBER_MAP = new Map([
 ]);
 
 const config = {
-  SLACK_BOT_TOKEN: 'xoxb-1250645255394-11012406659139-DboqhWy6CcpVxaYI9nJKsNRP',
   worksHour: { days: [1, 2, 3, 4, 5], startHour: 8, endHour: 19 },
 };
+const SENSITIVE_KEY_PATTERN = '(?:token|authorization|cookie|password|(?:access|refresh)[_-]?token|api[_-]?key|client[_-]?secret)';
+const SENSITIVE_VALUE_PATTERN = new RegExp(
+  `((?:\\\\?["']?\\b${SENSITIVE_KEY_PATTERN}\\b\\\\?["']?)\\s*[:=]\\s*)([\\s\\S]*?)(?=(?:\\s+(?:\\\\?["']?\\b${SENSITIVE_KEY_PATTERN}\\b\\\\?["']?)\\s*[:=])|\\r?\\n|$)`,
+  'gi',
+);
 
 class ErrorNotifier {
-  constructor({ targetService, serviceOwner, slackChannel } = {}) {
+  constructor({ targetService, serviceOwner, slackToken, slackChannel } = {}) {
     this.targetService = targetService || 'Unknown Service';
     this.serviceOwner = serviceOwner || '';
-    this.token = config.SLACK_BOT_TOKEN;
+    const token = slackToken === undefined ? process.env.SLACK_BOT_TOKEN : slackToken;
     this.channel = slackChannel;
-    this.slackClient = new WebClient(this.token);
+    Object.defineProperties(this, {
+      token: {
+        configurable: true,
+        enumerable: false,
+        value: token,
+        writable: true,
+      },
+      slackClient: {
+        configurable: true,
+        enumerable: false,
+        value: new WebClient(token),
+        writable: true,
+      },
+    });
   }
 
   /** owner을 슬랙 멘션으로 변환하는 메서드 */
@@ -33,7 +51,7 @@ class ErrorNotifier {
 
     // owner가 MEMBER_MAP에 있으면 멘션, 없으면 그냥 이름 노출
     const slackId = MEMBER_MAP.get(owner);
-    if (!slackId) return owner;
+    if (!slackId) return sanitizeSlackMarkup(owner);
 
     // 한국 시간 기준으로 근무 시간 내면 멘션, 아니면 이름만 노출
     const { days, startHour, endHour } = config.worksHour;
@@ -57,16 +75,27 @@ class ErrorNotifier {
     return String(value);
   }
 
+  /** 메시지 안의 인증 정보를 마스킹하는 메서드 */
+  _redactSensitiveValues(value) {
+    const stringValue = this._toStringSafe(value);
+    return stringValue.replace(SENSITIVE_VALUE_PATTERN, '$1[REDACTED]');
+  }
+
+  /** Slack 특수 멘션을 제거하는 메서드 */
+  _sanitizeSlackMessage(value) {
+    return sanitizeSlackMarkup(this._redactSensitiveValues(value));
+  }
+
   /** value를 ```value``` 형태(code block)로 감싸는 메서드 */
   _wrappedInCodeFence(value) {
-    const strValue = this._toStringSafe(value);
+    const strValue = this._sanitizeSlackMessage(value);
     if (!strValue) return '';
     const CODE_FENCE = '```';
     return `${CODE_FENCE}${strValue}${CODE_FENCE}`;
   }
 
   /** Slack 메시지를 게시하는 메서드 */
-  _postSlackMessage({ channel, message, isMentionUser, thread_ts }) {
+  _postSlackMessage({ channel, message, thread_ts }) {
     if (!channel) {
       console.error('Required slack channel to post message');
       return;
@@ -75,7 +104,6 @@ class ErrorNotifier {
     return this.slackClient.chat.postMessage({
       channel,
       text: message,
-      link_names: isMentionUser ? 1 : 0, // 멘션이 포함된 메시지는 link_names=1로 설정하여 멘션이 제대로 작동하도록 함
       thread_ts,
     });
   }
@@ -93,18 +121,17 @@ class ErrorNotifier {
     const owner = this._mapOwnerToSlackId(this.serviceOwner);
 
     const statusCode = error?.status ? this._toStringSafe(error?.status) : '500';
-    const errorMessage = this._toStringSafe(error?.message);
-    const errorStack = this._toStringSafe(error?.stack);
+    const errorMessage = this._sanitizeSlackMessage(error?.message);
+    const errorStack = this._sanitizeSlackMessage(error?.stack);
 
     const payload = {
       channel: this.channel,
-      isMentionUser: Boolean(owner),
-      message: `*[${statusCode}]* *${this.targetService}* 확인 필요 ${owner}`,
+      message: `*[${this._sanitizeSlackMessage(statusCode)}]* *${this._sanitizeSlackMessage(this.targetService)}* 확인 필요 ${owner}`,
     };
 
     // 추가 메시지가 있으면 에러 메시지 앞에 추가
     if (message) {
-      payload.message = this._toStringSafe(message) + `\n` + payload.message;
+      payload.message = this._sanitizeSlackMessage(message) + `\n` + payload.message;
     }
 
     // 에러 메시지 첫 메시지 게시는 멘션 포함, 이후 메시지는 스레드 게시
