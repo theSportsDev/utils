@@ -1,36 +1,44 @@
 # Notifier
 
-Slack 채널로 에러 알림을 발송하는 모듈. `ErrorNotifier` 클래스를 직접 인스턴스화해 사용합니다.
+Slack 채널로 에러·작업·배포 알림을 발송하는 모듈입니다.
 
 ## 사용법
 
 ```js
 // CommonJS
-const { ErrorNotifier } = require('@theSportsDev/utils');
+const { ErrorNotifier, SlackNotifier } = require('@theSportsDev/utils');
 
 // ESM
-import { ErrorNotifier } from '@theSportsDev/utils';
+import { ErrorNotifier, SlackNotifier } from '@theSportsDev/utils';
 
-module.exports = new ErrorNotifier({
+const errorNotifier = new ErrorNotifier({
   slackChannel: process.env.SLACK_ALERT_CHANNEL,
   targetService: 'FC xxx API 서버',
   serviceOwner: '홍길동',
 });
 
-await notifier.push({ error });
+await errorNotifier.push({ error });
+
+const slackNotifier = new SlackNotifier();
+await slackNotifier.notifyScriptResult({
+  targetService: '수원 삼성',
+  taskName: '경기결과 업데이트',
+  success: true,
+});
 ```
 
 ## 생성자 옵션
 
-모든 옵션은 선택값입니다. `token` / `channel`을 생략하면 환경변수에서 fallback으로 읽습니다.
+모든 옵션은 선택값입니다. `slackToken`을 생략하면 `SLACK_BOT_TOKEN` 환경변수를 사용합니다. ErrorNotifier의 채널은 기존처럼 생성자에서 직접 전달합니다.
 
 | 옵션      | 기본값                                     | 설명                                                       |
 | --------- | ------------------------------------------ | ---------------------------------------------------------- |
-| `slackChannel` | `process.env.SLACK_CHANNEL_ERROR_NOTIFY`   | 메시지를 보낼 채널 ID                                      |
+| `slackToken` | `process.env.SLACK_BOT_TOKEN`   | Slack Bot Token                                      |
+| `slackChannel` | 없음   | 메시지를 보낼 채널 ID                                      |
 | `targetService` | `'Unknown Service'`                        | 알림 메시지에 표기될 서비스 이름                           |
 | `serviceOwner`   | `''`                                       | 담당자 이름. 사내 멤버 맵에 있으면 Slack 멘션으로 변환됨   |
 
-## `post({ error, message })`
+## `push({ error, message })`
 
 | 인자      | 타입     | 설명                                                                  |
 | --------- | -------- | --------------------------------------------------------------------- |
@@ -43,6 +51,41 @@ await notifier.push({ error });
 - 부모 메시지: `*[status]* *서비스명* 확인 필요 @담당자`
   - `message` 인자를 전달하면 부모 메시지 앞 줄에 추가됩니다.
 - 스레드 답글: `error.message`, `error.stack`을 각각 코드블록으로 감싸 별도 메시지로 발송합니다.
+
+## SlackNotifier
+
+`SlackNotifier`는 일반 메시지, 스크립트 결과, 배포 결과를 발송합니다. 생성자 옵션은 환경변수보다 우선합니다.
+
+| 옵션 | 환경변수 | 설명 |
+| --- | --- | --- |
+| `slackToken` | `SLACK_BOT_TOKEN` | Slack Bot Token |
+| `slackChannel` | `SLACK_CHANNEL` | 발송할 채널 ID |
+
+```js
+const { SlackNotifier, formatDeploymentResultMessage } = require('@theSportsDev/utils/notifier');
+
+const notifier = new SlackNotifier({
+  slackToken: process.env.SLACK_BOT_TOKEN,
+  slackChannel: process.env.SLACK_CHANNEL,
+});
+
+await notifier.push({ message: '작업을 시작합니다.' });
+await notifier.notifyDeploymentResult({
+  environment: 'release',
+  targetService: '수원삼성',
+  serviceType: 'API',
+  success: true,
+});
+
+formatDeploymentResultMessage({
+  environment: 'release',
+  targetService: '수원삼성',
+  serviceType: 'WEB',
+  success: false,
+});
+```
+
+`formatScriptResultMessage({ targetService, taskName, success })`와 `formatDeploymentResultMessage({ environment, targetService, serviceType, success })`는 메시지만 만들며, 모든 필수 문자열은 공백을 제거한 뒤 비어 있으면 거부합니다. `success`는 boolean이어야 하고 `serviceType`은 `WEB` 또는 `API`만 허용합니다.
 
 ## 담당자 멘션 규칙
 
