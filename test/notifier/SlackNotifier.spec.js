@@ -134,6 +134,27 @@ describe('SlackNotifier', () => {
     expect(instance.channel).toBe('env-channel');
   });
 
+  test('slackToken과 slackChannel 및 message를 trim한다', async () => {
+    const instance = new SlackNotifier({ slackToken: ' option-token ', slackChannel: ' C-TEST ' });
+
+    expect(WebClient).toHaveBeenCalledWith('option-token');
+    expect(instance.channel).toBe('C-TEST');
+
+    await instance.push({ message: ' hello ' });
+
+    expect(mockPostMessage).toHaveBeenCalledWith({ channel: 'C-TEST', text: 'hello' });
+  });
+
+  test.each([
+    ['token', { slackToken: '   ', slackChannel: 'C-TEST' }],
+    ['channel', { slackToken: 'token', slackChannel: '\t' }],
+  ])('whitespace-only %s은 push에서 거부하고 SDK를 호출하지 않는다', async (_field, options) => {
+    const instance = new SlackNotifier(options);
+
+    await expect(instance.push({ message: 'hello' })).rejects.toThrow();
+    expect(mockPostMessage).not.toHaveBeenCalled();
+  });
+
   test('구성값이 없으면 push가 거부된다', async () => {
     await expect(new SlackNotifier().push({ message: 'hello' })).rejects.toThrow();
     expect(mockPostMessage).not.toHaveBeenCalled();

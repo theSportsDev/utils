@@ -1,7 +1,22 @@
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const { ErrorNotifier } = require('./index.cjs');
+const {
+  ErrorNotifier,
+  SlackNotifier,
+  formatScriptResultMessage,
+  formatDeploymentResultMessage,
+} = require('./index.cjs');
 
-export { ErrorNotifier };
-export default { ErrorNotifier };
+export {
+  ErrorNotifier,
+  SlackNotifier,
+  formatScriptResultMessage,
+  formatDeploymentResultMessage,
+};
+export default {
+  ErrorNotifier,
+  SlackNotifier,
+  formatScriptResultMessage,
+  formatDeploymentResultMessage,
+};
