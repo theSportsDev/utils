@@ -9,6 +9,10 @@
       "import": "./src/index.mjs",
       "require": "./src/index.cjs"
     },
+    "./notifier": {
+      "import": "./src/notifier/index.mjs",
+      "require": "./src/notifier/index.cjs"
+    },
     "./datetime": {
       "import": "./src/datetime/index.mjs",
       "require": "./src/datetime/index.cjs"
