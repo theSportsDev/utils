@@ -93,6 +93,23 @@ formatDeploymentResultMessage({
 
 `formatScriptResultMessage({ targetService, taskName, success })`와 `formatDeploymentResultMessage({ environment, targetService, serviceType, success })`는 메시지만 만들며, 모든 필수 문자열은 공백을 제거한 뒤 비어 있으면 거부합니다. `success`는 boolean이어야 하고 `serviceType`은 `WEB` 또는 `API`만 허용합니다.
 
+## 실제 채널 발송 확인
+
+테스트용 발송 스크립트는 저장소 루트의 `.env`에서 봇 토큰과 채널 ID를 자동으로 읽습니다. 셸 환경변수로 설정한 값은 `.env` 값보다 우선합니다.
+
+```bash
+# .env
+SLACK_BOT_TOKEN='xoxb-...'
+SLACK_CHANNEL='C0123456789'
+
+npm run test:slack:post
+npm run test:slack:post -- '배포 알림 발송 확인'
+npm run test:slack:post-thread
+npm run test:slack:post-thread -- '배포 확인' '서버 확인 완료' '모니터링 시작'
+```
+
+`test:slack:post`는 인자를 하나의 메시지로 합쳐 발송하며, 메시지를 생략하면 `[TEST] Hello world!`를 발송합니다. `test:slack:post-thread`는 첫 번째 인자를 부모 메시지로, 나머지 인자를 스레드 댓글로 발송합니다. 인자를 생략하면 기본 부모 메시지와 댓글 두 개를 발송하며, 부모 메시지만 지정하면 발송하지 않고 실패합니다. 성공 시 발송 순서대로 Slack 메시지의 `ts` 식별자만 출력하며, 토큰·채널·메시지는 출력하지 않습니다.
+
 ## 담당자 멘션 규칙
 
 - 내장 멤버 맵에 등록된 이름인 경우, **한국 시간 기준 평일(월–금) 08:00–19:00**에만 `<@SlackId>` 형태로 멘션됩니다.
