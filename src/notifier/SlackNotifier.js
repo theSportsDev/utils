@@ -55,7 +55,7 @@ class SlackNotifier {
       throw new TypeError('comments must be a non-empty array');
     }
 
-    const commentTexts = comments.map((comment, index) => (
+    const commentTexts = Array.from(comments, (comment, index) => (
       sanitizeSlackMarkup(requireString(comment, `comments[${index}]`))
     ));
 
