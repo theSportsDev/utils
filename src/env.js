@@ -13,13 +13,13 @@ Object.defineProperties(env, {
       return process.env.NODE_ENV || 'development';
     },
   },
-  slackBotToken: {
+  devNotifierSlackToken: {
     enumerable: false,
     get() {
       return process.env.SLACK_BOT_TOKEN;
     },
   },
-  slackChannel: {
+  devNotifierSlackChannel: {
     enumerable: true,
     get() {
       return process.env.SLACK_CHANNEL;

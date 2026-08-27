@@ -36,8 +36,8 @@ function formatMessage(message, result) {
 
 class DevNotifier {
   constructor({ slackToken, slackChannel } = {}) {
-    const token = slackToken === undefined ? env.slackBotToken : slackToken;
-    const channel = slackChannel === undefined ? env.slackChannel : slackChannel;
+    const token = slackToken === undefined ? env.devNotifierSlackToken : slackToken;
+    const channel = slackChannel === undefined ? env.devNotifierSlackChannel : slackChannel;
     const normalizedToken = typeof token === 'string' ? token.trim() : token;
 
     this.channel = typeof channel === 'string' ? channel.trim() : channel;

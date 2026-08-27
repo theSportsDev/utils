@@ -28,7 +28,7 @@ class ErrorNotifier {
   constructor({ targetService, serviceOwner, slackToken, slackChannel } = {}) {
     this.targetService = targetService || 'Unknown Service';
     this.serviceOwner = serviceOwner || '';
-    const token = slackToken === undefined ? env.slackBotToken : slackToken;
+    const token = slackToken === undefined ? env.devNotifierSlackToken : slackToken;
     this.channel = slackChannel;
     Object.defineProperties(this, {
       token: {

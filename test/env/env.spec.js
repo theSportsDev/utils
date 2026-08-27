@@ -10,7 +10,7 @@ const ENV_MODULE_PATH = path.resolve(__dirname, '../../src/env.js');
 function readEnvInChild({ cwd, environment = {} }) {
   const script = [
     `const env = require(${JSON.stringify(ENV_MODULE_PATH)});`,
-    'process.stdout.write(JSON.stringify({ nodeEnv: env.nodeEnv, slackBotToken: env.slackBotToken, slackChannel: env.slackChannel }));',
+    'process.stdout.write(JSON.stringify({ nodeEnv: env.nodeEnv, devNotifierSlackToken: env.devNotifierSlackToken, devNotifierSlackChannel: env.devNotifierSlackChannel, slackBotToken: env.slackBotToken, slackChannel: env.slackChannel }));',
   ].join('\n');
 
   const childEnvironment = { ...process.env };
@@ -29,7 +29,7 @@ describe('환경변수 객체', () => {
     const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'utils-env-'));
     const script = [
       `const env = require(${JSON.stringify(ENV_MODULE_PATH)});`,
-      'process.stdout.write(JSON.stringify({ isObject: typeof env === \'object\' && env !== null, keys: Object.keys(env), hasToken: Object.prototype.hasOwnProperty.call(env, \'slackBotToken\'), hasNestedEnv: Object.prototype.hasOwnProperty.call(env, \'env\') }));',
+      'process.stdout.write(JSON.stringify({ isObject: typeof env === \'object\' && env !== null, keys: Object.keys(env), hasToken: Object.prototype.hasOwnProperty.call(env, \'devNotifierSlackToken\'), hasLegacyToken: Object.prototype.hasOwnProperty.call(env, \'slackBotToken\'), hasLegacyChannel: Object.prototype.hasOwnProperty.call(env, \'slackChannel\'), hasNestedEnv: Object.prototype.hasOwnProperty.call(env, \'env\') }));',
     ].join('\n');
 
     try {
@@ -46,8 +46,10 @@ describe('환경변수 객체', () => {
       // Then: 모듈 자체가 환경 객체를 반환하고 토큰은 비열거 상태다
       expect(result).toEqual({
         isObject: true,
-        keys: ['nodeEnv', 'slackChannel'],
+        keys: ['nodeEnv', 'devNotifierSlackChannel'],
         hasToken: true,
+        hasLegacyToken: false,
+        hasLegacyChannel: false,
         hasNestedEnv: false,
       });
     } finally {
@@ -78,8 +80,8 @@ describe('환경변수 객체', () => {
       // Then: 셸 환경변수가 그대로 반환된다
       expect(result).toEqual({
         nodeEnv: 'shell',
-        slackBotToken: 'shell-token',
-        slackChannel: 'shell-channel',
+        devNotifierSlackToken: 'shell-token',
+        devNotifierSlackChannel: 'shell-channel',
       });
     } finally {
       fs.rmSync(cwd, { recursive: true, force: true });
@@ -104,8 +106,8 @@ describe('환경변수 객체', () => {
       // Then: .env 값이 반환된다
       expect(fromDotEnv).toEqual({
         nodeEnv: 'staging',
-        slackBotToken: 'dotenv-token',
-        slackChannel: 'dotenv-channel',
+        devNotifierSlackToken: 'dotenv-token',
+        devNotifierSlackChannel: 'dotenv-channel',
       });
     } finally {
       fs.rmSync(cwd, { recursive: true, force: true });
@@ -138,7 +140,7 @@ describe('환경변수 객체', () => {
     }
   });
 
-  test('getter가 process.env의 런타임 변경을 반영한다', () => {
+  test('getter가 process.env의 런타임 변경을 새 프로퍼티에 반영한다', () => {
     // Given: env 모듈을 로드하고 환경변수를 초기화했다
     jest.resetModules();
     const original = {
@@ -159,8 +161,10 @@ describe('환경변수 객체', () => {
 
       // Then: getter가 최신 값을 반환한다
       expect(env.nodeEnv).toBe('production');
-      expect(env.slackBotToken).toBe('runtime-token');
-      expect(env.slackChannel).toBe('runtime-channel');
+      expect(env.devNotifierSlackToken).toBe('runtime-token');
+      expect(env.devNotifierSlackChannel).toBe('runtime-channel');
+      expect(env.slackBotToken).toBeUndefined();
+      expect(env.slackChannel).toBeUndefined();
     } finally {
       Object.entries(original).forEach(([key, value]) => {
         if (value === undefined) delete process.env[key];
@@ -169,7 +173,7 @@ describe('환경변수 객체', () => {
     }
   });
 
-  test('slackBotToken은 열거·직렬화되지 않고 getter를 덮어쓸 수 없다', () => {
+  test('devNotifierSlackToken은 열거·직렬화되지 않고 getter를 덮어쓸 수 없다', () => {
     // Given: 환경변수 객체와 Slack 토큰이 준비되었다
     jest.resetModules();
     const originalToken = process.env.SLACK_BOT_TOKEN;
@@ -182,27 +186,31 @@ describe('환경변수 객체', () => {
       const serialized = JSON.stringify(env);
       const spread = { ...env };
       const descriptors = Object.fromEntries(
-        ['nodeEnv', 'slackBotToken', 'slackChannel']
+        ['nodeEnv', 'devNotifierSlackToken', 'devNotifierSlackChannel', 'slackBotToken', 'slackChannel']
           .map((key) => [key, Object.getOwnPropertyDescriptor(env, key)]),
       );
       try {
-        env.slackBotToken = 'overwritten-sentinel';
+        env.devNotifierSlackToken = 'overwritten-sentinel';
       } catch (error) {
         // 읽기 전용 프로퍼티의 엄격 모드 대입 오류는 허용한다
       }
       process.env.SLACK_BOT_TOKEN = 'runtime-token';
 
       // Then: 토큰이 외부 표현에 노출되지 않고 최신 환경값을 반환한다
+      expect(keys).not.toContain('devNotifierSlackToken');
       expect(keys).not.toContain('slackBotToken');
       expect(serialized).not.toContain('token-sentinel');
+      expect(spread).not.toHaveProperty('devNotifierSlackToken');
       expect(spread).not.toHaveProperty('slackBotToken');
       expect(descriptors.nodeEnv).toEqual(expect.objectContaining({ enumerable: true, configurable: false, set: undefined }));
-      expect(descriptors.slackBotToken).toEqual(expect.objectContaining({ enumerable: false, configurable: false, set: undefined }));
-      expect(descriptors.slackChannel).toEqual(expect.objectContaining({ enumerable: true, configurable: false, set: undefined }));
+      expect(descriptors.devNotifierSlackToken).toEqual(expect.objectContaining({ enumerable: false, configurable: false, set: undefined }));
+      expect(descriptors.devNotifierSlackChannel).toEqual(expect.objectContaining({ enumerable: true, configurable: false, set: undefined }));
+      expect(descriptors.slackBotToken).toBeUndefined();
+      expect(descriptors.slackChannel).toBeUndefined();
       expect(typeof descriptors.nodeEnv.get).toBe('function');
-      expect(typeof descriptors.slackBotToken.get).toBe('function');
-      expect(typeof descriptors.slackChannel.get).toBe('function');
-      expect(env.slackBotToken).toBe('runtime-token');
+      expect(typeof descriptors.devNotifierSlackToken.get).toBe('function');
+      expect(typeof descriptors.devNotifierSlackChannel.get).toBe('function');
+      expect(env.devNotifierSlackToken).toBe('runtime-token');
     } finally {
       if (originalToken === undefined) delete process.env.SLACK_BOT_TOKEN;
       else process.env.SLACK_BOT_TOKEN = originalToken;
