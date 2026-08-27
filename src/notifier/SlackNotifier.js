@@ -46,6 +46,35 @@ class SlackNotifier {
     return this.slackClient.chat.postMessage({ channel, text });
   }
 
+  async postThread({ message, comments } = {}) {
+    const token = requireString(this.token, 'slackToken');
+    const channel = requireString(this.channel, 'slackChannel');
+    const text = sanitizeSlackMarkup(requireString(message, 'message'));
+
+    if (!Array.isArray(comments) || comments.length === 0) {
+      throw new TypeError('comments must be a non-empty array');
+    }
+
+    const commentTexts = comments.map((comment, index) => (
+      sanitizeSlackMarkup(requireString(comment, `comments[${index}]`))
+    ));
+
+    const parent = await this.slackClient.chat.postMessage({ channel, text });
+    const threadTs = requireString(parent && parent.ts, 'parent response ts');
+    const commentResponses = [];
+
+    for (const commentText of commentTexts) {
+      const comment = await this.slackClient.chat.postMessage({
+        channel,
+        text: commentText,
+        thread_ts: threadTs,
+      });
+      commentResponses.push(comment);
+    }
+
+    return { parent, comments: commentResponses };
+  }
+
   notifyScriptResult(options) {
     return this.push({ message: formatScriptResultMessage(options) });
   }
