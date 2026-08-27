@@ -70,6 +70,10 @@ const notifier = new SlackNotifier({
 });
 
 await notifier.push({ message: '작업을 시작합니다.' });
+await notifier.postThread({
+  message: '배포 후 확인이 필요합니다.',
+  comments: ['헬스 체크를 시작합니다.', '모니터링 결과를 공유합니다.'],
+});
 await notifier.notifyDeploymentResult({
   environment: 'release',
   targetService: '수원삼성',
@@ -84,6 +88,8 @@ formatDeploymentResultMessage({
   success: false,
 });
 ```
+
+`postThread({ message, comments })`는 부모 메시지를 먼저 발송하고, `comments`의 각 메시지를 해당 부모 메시지의 스레드에 입력 순서대로 추가합니다. `comments`는 비어 있지 않은 문자열 배열이어야 하며, 반환값에는 부모 응답과 각 댓글 응답이 `{ parent, comments }` 형태로 포함됩니다.
 
 `formatScriptResultMessage({ targetService, taskName, success })`와 `formatDeploymentResultMessage({ environment, targetService, serviceType, success })`는 메시지만 만들며, 모든 필수 문자열은 공백을 제거한 뒤 비어 있으면 거부합니다. `success`는 boolean이어야 하고 `serviceType`은 `WEB` 또는 `API`만 허용합니다.
 
