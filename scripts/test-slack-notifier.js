@@ -1,47 +1,12 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-
+const envConfig = require('../src/env');
 const { SlackNotifier: DefaultSlackNotifier } = require('../src/notifier/SlackNotifier');
 
 const DEFAULT_MESSAGE = '[TEST] Hello world!';
 const DEFAULT_THREAD_MESSAGE = '[TEST] Thread parent';
 const DEFAULT_THREAD_COMMENTS = ['[TEST] Thread comment 1', '[TEST] Thread comment 2'];
-const DOT_ENV_PATH = path.resolve(__dirname, '../.env');
-
-function loadDotEnv(env) {
-  let contents;
-
-  try {
-    contents = fs.readFileSync(DOT_ENV_PATH, 'utf8');
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      return;
-    }
-
-    throw error;
-  }
-
-  contents.split(/\r?\n/).forEach((line) => {
-    const match = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
-
-    if (!match || env[match[1]] !== undefined) {
-      return;
-    }
-
-    const value = match[2].trim();
-    const quote = value[0];
-
-    env[match[1]] = quote && quote === value[value.length - 1] && (quote === '\'' || quote === '"')
-      ? value.slice(1, -1)
-      : value;
-  });
-}
-
-function getRequiredEnv(env, name) {
-  const value = env[name];
-
+function getRequiredEnv(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
@@ -81,12 +46,10 @@ function writeTs(stdout, response) {
   }
 }
 
-loadDotEnv(process.env);
-
 async function run({
   mode = 'post',
   args = process.argv.slice(2),
-  env = process.env,
+  env = envConfig,
   SlackNotifier = DefaultSlackNotifier,
   stdout = console.log,
   stderr = console.error,
@@ -103,8 +66,8 @@ async function run({
     return 1;
   }
 
-  const slackToken = getRequiredEnv(env, 'SLACK_BOT_TOKEN');
-  const slackChannel = getRequiredEnv(env, 'SLACK_CHANNEL');
+  const slackToken = getRequiredEnv(env.slackBotToken);
+  const slackChannel = getRequiredEnv(env.slackChannel);
 
   if (!slackToken || !slackChannel) {
     stderr('SLACK_BOT_TOKEN 및 SLACK_CHANNEL 환경변수가 필요합니다.');

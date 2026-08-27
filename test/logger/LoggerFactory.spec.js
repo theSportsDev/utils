@@ -21,6 +21,7 @@ const os = require('os');
 const path = require('path');
 
 const { LoggerFactory } = require('../../src/index.cjs');
+const { Logger } = require('../../src/logger/logger');
 
 // 로컬 타임존 기준 YYYY-MM-DD (winston-daily-rotate-file의 기본 동작과 일치)
 function localYyyyMmDd(date = new Date()) {
@@ -55,6 +56,53 @@ function waitForFile(filePath, timeout = 2000, minSize = 1) {
 }
 
 describe('Logger 사용 가이드', () => {
+  describe('환경 설정', () => {
+    let originalNodeEnv;
+
+    beforeEach(() => {
+      originalNodeEnv = process.env.NODE_ENV;
+    });
+
+    afterEach(() => {
+      if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = originalNodeEnv;
+    });
+
+    test('명시한 env 옵션이 환경변수보다 우선한다', () => {
+      // Given: process.env와 명시 옵션에 서로 다른 환경 이름이 준비되었다
+      process.env.NODE_ENV = 'production';
+
+      // When: 명시한 env 옵션으로 Logger 설정을 해석한다
+      const config = Logger.resolveConfig({ env: 'test', enableFile: false });
+
+      // Then: 명시 옵션을 사용한다
+      expect(config.env).toBe('test');
+    });
+
+    test('NODE_ENV를 Logger 설정에 반영한다', () => {
+      // Given: NODE_ENV가 준비되었다
+      process.env.NODE_ENV = 'staging';
+
+      // When: env 옵션 없이 Logger 설정을 해석한다
+      const config = Logger.resolveConfig({ enableFile: false });
+
+      // Then: 환경변수 값을 사용한다
+      expect(config.env).toBe('staging');
+    });
+
+    test.each([undefined, ''])('NODE_ENV가 %p이면 development를 사용한다', (nodeEnv) => {
+      // Given: NODE_ENV가 없거나 빈 문자열이다
+      if (nodeEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = nodeEnv;
+
+      // When: env 옵션 없이 Logger 설정을 해석한다
+      const config = Logger.resolveConfig({ enableFile: false });
+
+      // Then: development 기본값을 사용한다
+      expect(config.env).toBe('development');
+    });
+  });
+
   // ── 1. 생성 ─────────────────────────────────────────────────────────────────
 
   describe('생성 (LoggerFactory.create)', () => {

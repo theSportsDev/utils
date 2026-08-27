@@ -31,9 +31,11 @@ await slackNotifier.notifyScriptResult({
 
 모든 옵션은 선택값입니다. `slackToken`을 생략하면 `SLACK_BOT_TOKEN` 환경변수를 사용합니다. `ErrorNotifier`의 채널은 생성자에서 직접 전달해야 하며, `SlackNotifier`는 `SLACK_CHANNEL` 환경변수를 사용할 수 있습니다.
 
+환경변수는 현재 실행 디렉터리(`process.cwd()`)의 `.env`에서 자동으로 읽습니다. 셸의 `process.env`가 `.env`보다 우선하며, Slack 토큰과 채널에는 기본값이 없습니다.
+
 | 옵션 | 기본값 | 설명 |
 | --- | --- | --- |
-| `slackToken` | `process.env.SLACK_BOT_TOKEN` | Slack Bot Token |
+| `slackToken` | `SLACK_BOT_TOKEN` | Slack Bot Token |
 | `slackChannel` | 없음 | 메시지를 보낼 채널 ID |
 | `targetService` | `'Unknown Service'` | 알림 메시지에 표기될 서비스 이름 |
 | `serviceOwner` | `''` | 담당자 이름. 사내 멤버 맵에 있으면 Slack 멘션으로 변환됨 |

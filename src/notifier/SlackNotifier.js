@@ -1,6 +1,7 @@
 'use strict';
 
 const { WebClient } = require('@slack/web-api');
+const env = require('../env');
 const {
   formatScriptResultMessage,
   formatDeploymentResultMessage,
@@ -17,8 +18,8 @@ function requireString(value, fieldName) {
 
 class SlackNotifier {
   constructor({ slackToken, slackChannel } = {}) {
-    const token = slackToken === undefined ? process.env.SLACK_BOT_TOKEN : slackToken;
-    const channel = slackChannel === undefined ? process.env.SLACK_CHANNEL : slackChannel;
+    const token = slackToken === undefined ? env.slackBotToken : slackToken;
+    const channel = slackChannel === undefined ? env.slackChannel : slackChannel;
 
     const normalizedToken = typeof token === 'string' ? token.trim() : token;
     this.channel = typeof channel === 'string' ? channel.trim() : channel;
