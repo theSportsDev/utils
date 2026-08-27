@@ -14,15 +14,15 @@ const notifier = require('../../src/notifier/index.cjs');
 const { DevNotifier, ErrorNotifier } = notifier;
 
 describe('DevNotifier', () => {
-  const originalToken = process.env.SLACK_BOT_TOKEN;
-  const originalChannel = process.env.SLACK_CHANNEL;
+  const originalToken = process.env.DEV_NOTIFIER_SLACK_TOKEN;
+  const originalChannel = process.env.DEV_NOTIFIER_SLACK_CHANNEL;
   const now = new Date('2026-08-25T12:29:59.000Z');
 
   beforeEach(() => {
     mockPostMessage.mockReset();
     WebClient.mockClear();
-    delete process.env.SLACK_BOT_TOKEN;
-    delete process.env.SLACK_CHANNEL;
+    delete process.env.DEV_NOTIFIER_SLACK_TOKEN;
+    delete process.env.DEV_NOTIFIER_SLACK_CHANNEL;
     mockPostMessage.mockResolvedValue({ ok: true, ts: '1700000000.000100' });
     jest.useFakeTimers().setSystemTime(now);
   });
@@ -32,10 +32,10 @@ describe('DevNotifier', () => {
   });
 
   afterAll(() => {
-    if (originalToken === undefined) delete process.env.SLACK_BOT_TOKEN;
-    else process.env.SLACK_BOT_TOKEN = originalToken;
-    if (originalChannel === undefined) delete process.env.SLACK_CHANNEL;
-    else process.env.SLACK_CHANNEL = originalChannel;
+    if (originalToken === undefined) delete process.env.DEV_NOTIFIER_SLACK_TOKEN;
+    else process.env.DEV_NOTIFIER_SLACK_TOKEN = originalToken;
+    if (originalChannel === undefined) delete process.env.DEV_NOTIFIER_SLACK_CHANNEL;
+    else process.env.DEV_NOTIFIER_SLACK_CHANNEL = originalChannel;
   });
 
   describe('post', () => {
@@ -263,8 +263,8 @@ describe('DevNotifier', () => {
   describe('Slack 구성과 안전성', () => {
     test('명시 옵션이 환경변수보다 우선하고 값을 trim한다', () => {
       // Given: 환경변수와 명시 옵션이 모두 있다
-      process.env.SLACK_BOT_TOKEN = ' env-token ';
-      process.env.SLACK_CHANNEL = ' env-channel ';
+      process.env.DEV_NOTIFIER_SLACK_TOKEN = ' env-token ';
+      process.env.DEV_NOTIFIER_SLACK_CHANNEL = ' env-channel ';
 
       // When: 명시 옵션으로 notifier를 생성한다
       const instance = new DevNotifier({ slackToken: ' option-token ', slackChannel: ' C-TEST ' });
@@ -320,7 +320,7 @@ describe('DevNotifier', () => {
 
     test('token은 JSON 직렬화 결과에 노출되지 않는다', () => {
       // Given: 명시 token과 환경 token으로 notifier를 생성한다
-      process.env.SLACK_BOT_TOKEN = 'ENV_TOKEN_SENTINEL';
+      process.env.DEV_NOTIFIER_SLACK_TOKEN = 'ENV_TOKEN_SENTINEL';
       const explicit = new DevNotifier({ slackToken: 'EXPLICIT_TOKEN_SENTINEL', slackChannel: 'C-TEST' });
       const fromEnv = new DevNotifier({ slackChannel: 'C-TEST' });
 

@@ -71,7 +71,7 @@ async function run({
   const slackToken = getRequiredEnv(env.devNotifierSlackToken);
   const slackChannel = getRequiredEnv(env.devNotifierSlackChannel);
   if (!slackToken || !slackChannel) {
-    stderr('SLACK_BOT_TOKEN 및 SLACK_CHANNEL 환경변수가 필요합니다.');
+    stderr('DEV_NOTIFIER_SLACK_TOKEN 및 DEV_NOTIFIER_SLACK_CHANNEL 환경변수가 필요합니다.');
     return 1;
   }
 

@@ -16,13 +16,13 @@ Object.defineProperties(env, {
   devNotifierSlackToken: {
     enumerable: false,
     get() {
-      return process.env.SLACK_BOT_TOKEN;
+      return process.env.DEV_NOTIFIER_SLACK_TOKEN;
     },
   },
   devNotifierSlackChannel: {
     enumerable: true,
     get() {
-      return process.env.SLACK_CHANNEL;
+      return process.env.DEV_NOTIFIER_SLACK_CHANNEL;
     },
   },
 });

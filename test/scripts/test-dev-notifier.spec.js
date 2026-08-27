@@ -66,7 +66,7 @@ describe('DevNotifier 테스트 스크립트', () => {
       // Then: 새 환경변수가 없으므로 실패하고 notifier를 호출하지 않는다
       expect(exitCode).toBe(1);
       expect(FakeDevNotifier).not.toHaveBeenCalled();
-      expect(stderr).toHaveBeenCalledWith('SLACK_BOT_TOKEN 및 SLACK_CHANNEL 환경변수가 필요합니다.');
+      expect(stderr).toHaveBeenCalledWith('DEV_NOTIFIER_SLACK_TOKEN 및 DEV_NOTIFIER_SLACK_CHANNEL 환경변수가 필요합니다.');
     });
   });
 

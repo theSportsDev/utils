@@ -20,12 +20,12 @@ await devNotifier.post({
 
 ## DevNotifier 생성자 옵션
 
-`slackToken`과 `slackChannel`을 생략하면 각각 `SLACK_BOT_TOKEN`, `SLACK_CHANNEL` 환경변수를 사용합니다. 명시한 옵션이 환경변수보다 우선합니다.
+`slackToken`과 `slackChannel`을 생략하면 각각 `DEV_NOTIFIER_SLACK_TOKEN`, `DEV_NOTIFIER_SLACK_CHANNEL` 환경변수를 사용합니다. 명시한 옵션이 환경변수보다 우선합니다.
 
 | 옵션 | 환경변수 | 설명 |
 | --- | --- | --- |
-| `slackToken` | `SLACK_BOT_TOKEN` | Slack Bot Token |
-| `slackChannel` | `SLACK_CHANNEL` | 발송할 채널 ID |
+| `slackToken` | `DEV_NOTIFIER_SLACK_TOKEN` | Slack Bot Token |
+| `slackChannel` | `DEV_NOTIFIER_SLACK_CHANNEL` | 발송할 채널 ID |
 
 ## DevNotifier
 
@@ -35,8 +35,8 @@ await devNotifier.post({
 const { DevNotifier } = require('@theSportsDev/utils/notifier');
 
 const notifier = new DevNotifier({
-  slackToken: process.env.SLACK_BOT_TOKEN,
-  slackChannel: process.env.SLACK_CHANNEL,
+  slackToken: process.env.DEV_NOTIFIER_SLACK_TOKEN,
+  slackChannel: process.env.DEV_NOTIFIER_SLACK_CHANNEL,
 });
 
 await notifier.post({
@@ -68,11 +68,11 @@ await notifier.postThread({
 
 ## ErrorNotifier
 
-`ErrorNotifier`는 서버 오류를 Slack에 발송합니다. `slackToken`을 생략하면 `SLACK_BOT_TOKEN`을 사용하지만, `slackChannel`은 생성자에서 직접 전달해야 합니다.
+`ErrorNotifier`는 서버 오류를 Slack에 발송합니다. `slackToken`을 생략하면 `DEV_NOTIFIER_SLACK_TOKEN`을 사용하지만, `slackChannel`은 생성자에서 직접 전달해야 합니다.
 
 | 옵션 | 기본값 | 설명 |
 | --- | --- | --- |
-| `slackToken` | `SLACK_BOT_TOKEN` | Slack Bot Token |
+| `slackToken` | `DEV_NOTIFIER_SLACK_TOKEN` | Slack Bot Token |
 | `slackChannel` | 없음 | 메시지를 보낼 채널 ID |
 | `targetService` | `'Unknown Service'` | 알림 메시지에 표기될 서비스 이름 |
 | `serviceOwner` | `''` | 담당자 이름. 사내 멤버 맵에 있으면 Slack 멘션으로 변환됨 |
@@ -119,7 +119,7 @@ await notifier.push({ error });
 
 ## 실제 채널 발송 확인
 
-저장소 루트 `.env`의 `SLACK_BOT_TOKEN`, `SLACK_CHANNEL`을 사용합니다. 셸 환경변수가 `.env`보다 우선합니다.
+저장소 루트 `.env`의 `DEV_NOTIFIER_SLACK_TOKEN`, `DEV_NOTIFIER_SLACK_CHANNEL`을 사용합니다. 셸 환경변수가 `.env`보다 우선합니다.
 
 ```bash
 npm run test:dev-notifier:post
