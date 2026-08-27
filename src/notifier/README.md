@@ -29,14 +29,14 @@ await slackNotifier.notifyScriptResult({
 
 ## 생성자 옵션
 
-모든 옵션은 선택값입니다. `slackToken`을 생략하면 `SLACK_BOT_TOKEN` 환경변수를 사용합니다. ErrorNotifier의 채널은 기존처럼 생성자에서 직접 전달합니다.
+모든 옵션은 선택값입니다. `slackToken`을 생략하면 `SLACK_BOT_TOKEN` 환경변수를 사용합니다. `ErrorNotifier`의 채널은 생성자에서 직접 전달해야 하며, `SlackNotifier`는 `SLACK_CHANNEL` 환경변수를 사용할 수 있습니다.
 
-| 옵션      | 기본값                                     | 설명                                                       |
-| --------- | ------------------------------------------ | ---------------------------------------------------------- |
-| `slackToken` | `process.env.SLACK_BOT_TOKEN`   | Slack Bot Token                                      |
-| `slackChannel` | 없음   | 메시지를 보낼 채널 ID                                      |
-| `targetService` | `'Unknown Service'`                        | 알림 메시지에 표기될 서비스 이름                           |
-| `serviceOwner`   | `''`                                       | 담당자 이름. 사내 멤버 맵에 있으면 Slack 멘션으로 변환됨   |
+| 옵션 | 기본값 | 설명 |
+| --- | --- | --- |
+| `slackToken` | `process.env.SLACK_BOT_TOKEN` | Slack Bot Token |
+| `slackChannel` | 없음 | 메시지를 보낼 채널 ID |
+| `targetService` | `'Unknown Service'` | 알림 메시지에 표기될 서비스 이름 |
+| `serviceOwner` | `''` | 담당자 이름. 사내 멤버 맵에 있으면 Slack 멘션으로 변환됨 |
 
 ## `push({ error, message })`
 
@@ -47,10 +47,11 @@ await slackNotifier.notifyScriptResult({
 
 발송 규칙:
 
-- `error`가 `Error` 인스턴스가 아니거나 `error.status < 500`이면 무시합니다.
+- `error`가 `Error` 인스턴스가 아니거나 `error.status`가 500 미만이면 무시합니다. `status`가 없으면 500으로 처리합니다.
 - 부모 메시지: `*[status]* *서비스명* 확인 필요 @담당자`
   - `message` 인자를 전달하면 부모 메시지 앞 줄에 추가됩니다.
 - 스레드 답글: `error.message`, `error.stack`을 각각 코드블록으로 감싸 별도 메시지로 발송합니다.
+- 메시지 안의 Slack 멘션(`@here`, `@channel`, 사용자·사용자 그룹 멘션)은 제거하고, 토큰·비밀번호·쿠키·API 키 등 인증 정보로 보이는 값은 `[REDACTED]`로 마스킹합니다.
 
 ## SlackNotifier
 
@@ -89,26 +90,9 @@ formatDeploymentResultMessage({
 });
 ```
 
-`postThread({ message, comments })`는 부모 메시지를 먼저 발송하고, `comments`의 각 메시지를 해당 부모 메시지의 스레드에 입력 순서대로 추가합니다. `comments`는 비어 있지 않은 문자열 배열이어야 하며, 반환값에는 부모 응답과 각 댓글 응답이 `{ parent, comments }` 형태로 포함됩니다.
+`push({ message })`는 메시지 하나를 발송합니다. `postThread({ message, comments })`는 부모 메시지를 먼저 발송하고, `comments`의 각 메시지를 해당 부모 메시지의 스레드에 입력 순서대로 추가합니다. `message`와 `comments`의 각 항목은 공백이 아닌 문자열이어야 하며, `comments`는 하나 이상 필요합니다. 반환값에는 부모 응답과 각 댓글 응답이 `{ parent, comments }` 형태로 포함됩니다.
 
-`formatScriptResultMessage({ targetService, taskName, success })`와 `formatDeploymentResultMessage({ environment, targetService, serviceType, success })`는 메시지만 만들며, 모든 필수 문자열은 공백을 제거한 뒤 비어 있으면 거부합니다. `success`는 boolean이어야 하고 `serviceType`은 `WEB` 또는 `API`만 허용합니다.
-
-## 실제 채널 발송 확인
-
-테스트용 발송 스크립트는 저장소 루트의 `.env`에서 봇 토큰과 채널 ID를 자동으로 읽습니다. 셸 환경변수로 설정한 값은 `.env` 값보다 우선합니다.
-
-```bash
-# .env
-SLACK_BOT_TOKEN='xoxb-...'
-SLACK_CHANNEL='C0123456789'
-
-npm run test:slack:post
-npm run test:slack:post -- '배포 알림 발송 확인'
-npm run test:slack:post-thread
-npm run test:slack:post-thread -- '배포 확인' '서버 확인 완료' '모니터링 시작'
-```
-
-`test:slack:post`는 인자를 하나의 메시지로 합쳐 발송하며, 메시지를 생략하면 `[TEST] Hello world!`를 발송합니다. `test:slack:post-thread`는 첫 번째 인자를 부모 메시지로, 나머지 인자를 스레드 댓글로 발송합니다. 인자를 생략하면 기본 부모 메시지와 댓글 두 개를 발송하며, 부모 메시지만 지정하면 발송하지 않고 실패합니다. 성공 시 발송 순서대로 Slack 메시지의 `ts` 식별자만 출력하며, 토큰·채널·메시지는 출력하지 않습니다.
+`formatScriptResultMessage({ targetService, taskName, success })`와 `formatDeploymentResultMessage({ environment, targetService, serviceType, success })`는 메시지만 만들며, 모든 필수 문자열은 앞뒤 공백을 제거한 뒤 비어 있으면 거부합니다. `success`는 boolean이어야 하고 `serviceType`은 대소문자와 무관하게 `WEB` 또는 `API`만 허용합니다. 사용자 입력으로 전달된 Slack 멘션도 제거합니다.
 
 ## 담당자 멘션 규칙
 
@@ -134,3 +118,20 @@ module.exports = new ErrorNotifier({
 const notifier = require('./config/notifier');
 await notifier.push({ error });
 ```
+
+## 실제 채널 발송 확인
+
+테스트용 발송 스크립트는 저장소 루트의 `.env`에서 봇 토큰과 채널 ID를 자동으로 읽습니다. 셸 환경변수로 설정한 값은 `.env` 값보다 우선합니다.
+
+```bash
+# .env
+SLACK_BOT_TOKEN='xoxb-...'
+SLACK_CHANNEL='C0123456789'
+
+npm run test:slack:post
+npm run test:slack:post -- '배포 알림 발송 확인'
+npm run test:slack:post-thread
+npm run test:slack:post-thread -- '배포 확인' '서버 확인 완료' '모니터링 시작'
+```
+
+`test:slack:post`는 인자를 하나의 메시지로 합쳐 발송하며, 메시지를 생략하면 `[TEST] Hello world!`를 발송합니다. `test:slack:post-thread`는 첫 번째 인자를 부모 메시지로, 나머지 인자를 스레드 댓글로 발송합니다. 인자를 생략하면 기본 부모 메시지와 댓글 두 개를 발송하며, 부모 메시지만 지정하면 발송하지 않고 실패합니다. 성공 시 발송 순서대로 Slack 메시지의 `ts` 식별자만 출력하며, 토큰·채널·메시지는 출력하지 않습니다.
