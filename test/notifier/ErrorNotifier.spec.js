@@ -9,6 +9,7 @@ jest.mock('@slack/web-api', () => ({
 }));
 
 const { WebClient } = require('@slack/web-api');
+const env = require('../../src/env');
 const { ErrorNotifier } = require('../../src/notifier/ErrorNotifier');
 
 function makeMockError(status, message = 'boom') {
@@ -18,7 +19,7 @@ function makeMockError(status, message = 'boom') {
 }
 
 describe('ErrorNotifier', () => {
-  const originalToken = process.env.SLACK_BOT_TOKEN;
+  const originalToken = process.env.DEV_NOTIFIER_SLACK_TOKEN;
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -29,8 +30,8 @@ describe('ErrorNotifier', () => {
   });
 
   afterEach(() => {
-    if (originalToken === undefined) delete process.env.SLACK_BOT_TOKEN;
-    else process.env.SLACK_BOT_TOKEN = originalToken;
+    if (originalToken === undefined) delete process.env.DEV_NOTIFIER_SLACK_TOKEN;
+    else process.env.DEV_NOTIFIER_SLACK_TOKEN = originalToken;
     jest.useRealTimers();
     jest.restoreAllMocks();
   });
@@ -50,17 +51,17 @@ describe('ErrorNotifier', () => {
   });
 
   describe('push() 발송 규칙', () => {
-    test('명시한 slackToken이 SLACK_BOT_TOKEN보다 우선한다', () => {
-      process.env.SLACK_BOT_TOKEN = 'env-token';
+    test('명시한 slackToken이 중앙 기본 token보다 우선한다', () => {
+      process.env.DEV_NOTIFIER_SLACK_TOKEN = 'env-token';
 
       new ErrorNotifier({ slackToken: 'option-token' });
 
       expect(WebClient).toHaveBeenCalledWith('option-token');
-      delete process.env.SLACK_BOT_TOKEN;
+      delete process.env.DEV_NOTIFIER_SLACK_TOKEN;
     });
 
     test('ErrorNotifier 직렬화 결과에 explicit/env token이 노출되지 않는다', () => {
-      process.env.SLACK_BOT_TOKEN = 'ENV_ERROR_TOKEN_SENTINEL';
+      process.env.DEV_NOTIFIER_SLACK_TOKEN = 'ENV_ERROR_TOKEN_SENTINEL';
       const explicit = new ErrorNotifier({ slackToken: 'EXPLICIT_ERROR_TOKEN_SENTINEL' });
       const fromEnv = new ErrorNotifier();
 
@@ -70,17 +71,17 @@ describe('ErrorNotifier', () => {
       expect(serialized).not.toContain('ENV_ERROR_TOKEN_SENTINEL');
     });
 
-    test('SLACK_BOT_TOKEN 환경변수를 사용하고 자격 증명을 payload에 노출하지 않는다', async () => {
-      process.env.SLACK_BOT_TOKEN = 'env-token';
+    test('중앙 dev notifier token을 사용하고 자격 증명을 payload에 노출하지 않는다', async () => {
+      process.env.DEV_NOTIFIER_SLACK_TOKEN = 'env-token';
       const notifier = new ErrorNotifier({ slackChannel: 'C-TEST' });
       notifier.slackClient = { chat: { postMessage: mockPostMessage } };
       mockPostMessage.mockResolvedValue({ ts: '1700000000.000100' });
 
       await notifier.push({ error: makeMockError(500, 'token=secret-value') });
 
-      expect(WebClient).toHaveBeenCalledWith('env-token');
+      expect(WebClient.mock.calls[0][0] === env.devNotifierSlackToken).toBe(true);
       expect(JSON.stringify(mockPostMessage.mock.calls)).not.toContain('env-token');
-      delete process.env.SLACK_BOT_TOKEN;
+      delete process.env.DEV_NOTIFIER_SLACK_TOKEN;
     });
 
     test('Error 인스턴스가 아니면 무시된다', async () => {

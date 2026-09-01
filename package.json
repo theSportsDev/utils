@@ -1,6 +1,6 @@
 {
   "name": "@theSportsDev/utils",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "author": "PlatformN",
   "description": "theSportsDev internal common utility library",
   "main": "./src/index.cjs",
@@ -26,8 +26,8 @@
   ],
   "scripts": {
     "test": "jest",
-    "test:slack:post": "node scripts/test-slack-notifier.js post",
-    "test:slack:post-thread": "node scripts/test-slack-notifier.js post-thread"
+    "test:dev-notifier:post": "node scripts/test-dev-notifier.js post",
+    "test:dev-notifier:post-thread": "node scripts/test-dev-notifier.js post-thread"
   },
   "jest": {
     "testMatch": [
@@ -46,6 +46,7 @@
   "dependencies": {
     "@slack/web-api": "^7.15.1",
     "dayjs": "^1.11.19",
+    "dotenv": "^17.4.2",
     "morgan": "^1.10.0",
     "winston": "^3.11.0",
     "winston-daily-rotate-file": "^5.0.0"

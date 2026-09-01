@@ -34,5 +34,5 @@ npm install @theSportsDev/utils
 | 모듈     | 설명                                                                                      | 문서                                       |
 | -------- | ----------------------------------------------------------------------------------------- | ------------------------------------------ |
 | Logger   | Morgan + Winston 기반 로거. 싱글턴으로 동작하며 앱 전체에서 동일한 인스턴스를 공유합니다. | [logger/README.md](./src/logger/README.md) |
-| Notifier | Slack 에러·작업·배포 알림 발송기. `ErrorNotifier`와 `SlackNotifier`를 제공합니다.         | [notifier/README.md](./src/notifier/README.md) |
+| Notifier | Slack 에러·서버 로그·스크립트 결과 발송기. `ErrorNotifier`와 `DevNotifier`를 제공합니다. | [notifier/README.md](./src/notifier/README.md) |
 | Datetime | 절대 시각, 서울 업무 시각, UTC ISO 출력을 구분하는 엄격한 날짜/시간 유틸리티입니다.      | [datetime/README.md](./src/datetime/README.md) |

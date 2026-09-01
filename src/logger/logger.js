@@ -6,13 +6,14 @@ const path = require('path');
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 
+const envConfig = require('../env');
 const { jsonFormat, prettyFormat } = require('./formats');
 
 const LEVELS = ['error', 'warn', 'info', 'http', 'verbose', 'debug'];
 
 class Logger {
   static resolveConfig(userConfig) {
-    const env = userConfig.env || process.env.NODE_ENV || 'development';
+    const env = userConfig.env || envConfig.nodeEnv;
     const isDev = env === 'development';
     return {
       env,

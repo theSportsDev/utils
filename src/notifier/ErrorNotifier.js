@@ -1,6 +1,7 @@
 'use strict';
 
 const { WebClient } = require('@slack/web-api');
+const env = require('../env');
 const { sanitizeSlackMarkup } = require('./messageSafety');
 
 const MEMBER_MAP = new Map([
@@ -27,7 +28,7 @@ class ErrorNotifier {
   constructor({ targetService, serviceOwner, slackToken, slackChannel } = {}) {
     this.targetService = targetService || 'Unknown Service';
     this.serviceOwner = serviceOwner || '';
-    const token = slackToken === undefined ? process.env.SLACK_BOT_TOKEN : slackToken;
+    const token = slackToken === undefined ? env.devNotifierSlackToken : slackToken;
     this.channel = slackChannel;
     Object.defineProperties(this, {
       token: {

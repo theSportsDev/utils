@@ -1,15 +1,9 @@
 'use strict';
 
 const { ErrorNotifier } = require('./ErrorNotifier');
-const {
-  SlackNotifier,
-  formatScriptResultMessage,
-  formatDeploymentResultMessage,
-} = require('./SlackNotifier');
+const { DevNotifier } = require('./DevNotifier');
 
 module.exports = {
   ErrorNotifier,
-  SlackNotifier,
-  formatScriptResultMessage,
-  formatDeploymentResultMessage,
+  DevNotifier,
 };
